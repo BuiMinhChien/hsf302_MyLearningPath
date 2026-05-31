@@ -25,7 +25,7 @@ public class CourseSection extends BaseEntity {
     @JoinColumn(name = "course_version_id", nullable = false)
     CourseVersion courseVersion;
 
-    @Column(name = "title", length = 255)
+    @Column(name = "title", columnDefinition = "NVARCHAR(255)")
     String title;
 
     @Column(name = "display_order")

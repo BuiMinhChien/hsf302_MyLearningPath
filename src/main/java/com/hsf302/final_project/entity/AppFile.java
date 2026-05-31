@@ -22,7 +22,7 @@ public class AppFile extends BaseEntity {
     @Column(name = "file_id")
     Long fileId;
 
-    @Column(name = "file_name", nullable = false, length = 255)
+    @Column(name = "file_name", nullable = false, columnDefinition = "NVARCHAR(255)")
     String fileName;
 
     @Column(name = "file_url", nullable = false, length = 500)

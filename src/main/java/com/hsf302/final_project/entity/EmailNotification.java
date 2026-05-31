@@ -35,7 +35,7 @@ public class EmailNotification extends BaseEntity {
 
     @Column(name = "subject",
             nullable = false,
-            length = 255)
+            columnDefinition = "NVARCHAR(255)")
     String subject;
 
     @Column(

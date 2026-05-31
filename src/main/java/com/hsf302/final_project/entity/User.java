@@ -28,7 +28,7 @@ public class User extends BaseEntity {
     @Column(name = "password", nullable = false, length = 255)
     String password;
 
-    @Column(name = "full_name", length = 255)
+    @Column(name = "full_name", columnDefinition = "NVARCHAR(255)")
     String fullName;
 
     @Column(name = "phone", length = 20)
@@ -43,7 +43,7 @@ public class User extends BaseEntity {
     EAccountStatus status; // ACTIVE / PENDING_VERIFICATION / INACTIVE
 
     // Thông tin ngân hàng
-    @Column(name = "bank_name", length = 255)
+    @Column(name = "bank_name", columnDefinition = "NVARCHAR(255)")
     String bankName;
     // Vietcombank / Techcombank / MB Bank
 
@@ -54,7 +54,7 @@ public class User extends BaseEntity {
     @Column(name = "bank_account_number", length = 100)
     String bankAccountNumber;
 
-    @Column(name = "bank_account_holder", length = 255)
+    @Column(name = "bank_account_holder", columnDefinition = "NVARCHAR(255)")
     String bankAccountHolder;
 
     @OneToOne(fetch = FetchType.LAZY)

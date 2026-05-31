@@ -21,9 +21,9 @@ public class Tag extends BaseEntity {
     @Column(name = "tag_id")
     Long tagId;
 
-    @Column(name = "tag_name", nullable = false, unique = true, length = 100)
+    @Column(name = "tag_name", nullable = false, unique = true, columnDefinition = "NVARCHAR(255)")
     String tagName;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     String description;
 }

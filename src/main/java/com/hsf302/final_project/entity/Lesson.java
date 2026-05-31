@@ -26,7 +26,7 @@ public class Lesson extends BaseEntity {
     @JoinColumn(name = "section_id", nullable = false)
     CourseSection section;
 
-    @Column(name = "title")
+    @Column(name = "title", columnDefinition = "NVARCHAR(255)")
     String title;
 
     @Enumerated(EnumType.STRING)
