@@ -24,7 +24,7 @@ public class UserProfile extends BaseEntity {
     @Column(name = "bio", columnDefinition = "NVARCHAR(MAX)")
     String bio;
 
-    @Column(name = "headline", length = 255)
+    @Column(name = "headline", columnDefinition = "NVARCHAR(255)")
     String headline;
 
     @Column(name = "facebook_url", length = 500)

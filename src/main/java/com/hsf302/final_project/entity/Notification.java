@@ -25,7 +25,7 @@ public class Notification extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     User user;
 
-    @Column(name = "title", length = 255)
+    @Column(name = "title", columnDefinition = "NVARCHAR(255)")
     String title;
 
     @Column(

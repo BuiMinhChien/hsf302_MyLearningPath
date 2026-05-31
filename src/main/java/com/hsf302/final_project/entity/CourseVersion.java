@@ -29,10 +29,10 @@ public class CourseVersion extends BaseEntity {
     @Column(name = "version_number", nullable = false)
     Integer versionNumber;
 
-    @Column(name = "title", length = 255)
+    @Column(name = "title", columnDefinition = "NVARCHAR(255)")
     String title;
 
-    @Column(name = "subtitle", length = 500)
+    @Column(name = "subtitle", columnDefinition = "NVARCHAR(MAX)")
     String subtitle;
 
     @Column(name = "description",
