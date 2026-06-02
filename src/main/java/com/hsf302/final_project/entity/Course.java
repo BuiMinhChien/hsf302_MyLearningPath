@@ -39,4 +39,8 @@ public class Course extends BaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "current_published_version_id")
     CourseVersion currentPublishedVersion;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "current_draft_version_id")
+    private CourseVersion currentDraftVersion;
 }
