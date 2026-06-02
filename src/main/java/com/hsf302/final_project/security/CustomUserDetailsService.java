@@ -1,4 +1,4 @@
-package com.hsf302.final_project.service;
+package com.hsf302.final_project.security;
 
 import com.hsf302.final_project.entity.User;
 import com.hsf302.final_project.repository.UserRepository;
@@ -10,9 +10,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class CustomUserDetailsService
-        implements UserDetailsService {
-
+public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
@@ -24,10 +22,6 @@ public class CustomUserDetailsService
                         new UsernameNotFoundException("User not found")
                 );
 
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getEmail())
-                .password(user.getPassword()) // BCrypt encoded
-                .roles(user.getRole().name())
-                .build();
+        return new CustomUserDetails(user);
     }
 }
