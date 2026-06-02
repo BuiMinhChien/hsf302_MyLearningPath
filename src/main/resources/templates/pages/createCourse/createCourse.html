@@ -854,20 +854,37 @@
                     <h5 class="mb-0"><i class="bi bi-image me-2"></i>Ảnh bìa khoá học</h5>
                 </div>
                 <div class="card-body">
-                    <div id="thumbnail-preview">
-                        <img id="thumb-img" src="" alt="thumbnail"/>
+                    <!-- PREVIEW -->
+                    <input type="hidden" th:field="*{courseForm.thumbnailUrl}" name="thumbnailUrl">
+                    <div id="thumbnail-preview"
+                         th:style="${courseForm.thumbnailUrl != null && !courseForm.thumbnailUrl.isEmpty()}? 'display:block': 'display:none'">
+                        <img id="thumb-img"
+                             th:src="${courseForm.thumbnailUrl}"
+                             alt="thumbnail"/>
                         <button type="button"
                                 class="btn btn-danger btn-sm rounded-circle remove-thumb"
                                 onclick="removeThumbnail()">
                             <i class="bi bi-x"></i>
                         </button>
                     </div>
-                    <div class="upload-zone" id="thumb-zone">
-                        <input type="file" id="thumbnailInput" accept="image/*" name="thumbnailFile"
+                    <!-- UPLOAD ZONE -->
+                    <div class="upload-zone"
+                         id="thumb-zone"
+                         th:style="${courseForm.thumbnailUrl != null && !courseForm.thumbnailUrl.isEmpty()}? 'display:none': 'display:block'">
+                        <input type="file"
+                               id="thumbnailInput"
+                               accept="image/*"
+                               name="thumbnailFile"
                                onchange="previewThumbnail(event)"/>
-                        <div class="display-6 mb-3 text-muted"><i class="bi bi-image"></i></div>
-                        <div class="fw-semibold">Kéo thả hoặc chọn ảnh</div>
-                        <div class="text-muted small">PNG, JPG, WEBP · Tỷ lệ 16:9 khuyến nghị</div>
+                        <div class="display-6 mb-3 text-muted">
+                            <i class="bi bi-image"></i>
+                        </div>
+                        <div class="fw-semibold">
+                            Kéo thả hoặc chọn ảnh
+                        </div>
+                        <div class="text-muted small">
+                            PNG, JPG, WEBP · Tỷ lệ 16:9 khuyến nghị
+                        </div>
                     </div>
                 </div>
             </div>
@@ -966,7 +983,6 @@
             </div>
         </div>
     </template>
-
 
     <!-- ═══════════════════ LESSON TEMPLATE ═══════════════════ -->
     <template id="lessonTemplate">
@@ -1180,62 +1196,28 @@
            1. COURSE OVERVIEW
         ═══════════════════════════════════════════════════════════════ */
         function saveCourseOverview() {
-            const title = document
-                .getElementById('title')
-                .value
-                .trim();
+            const title = document.getElementById('title').value.trim();
             if (!title) {
-                showToast(
-                    'Vui lòng nhập tiêu đề khoá học.',
-                    'danger'
-                );
+                showToast('Vui lòng nhập tiêu đề khoá học.', 'danger');
                 return;
             }
-            document
-                .getElementById('courseForm')
-                .submit();
+            const price = Number(document.getElementById('price').value.trim());
+            if (isNaN(price) || price < 0) {
+                showToast('Giá khoá học phải lớn hơn hoặc bằng 0.', 'danger');
+                return;
+            }
+            const thumbnailUrl = document.querySelector('input[name="thumbnailUrl"]')?.value?.trim();
+            const thumbnailInput = document.getElementById('thumbnailInput');
+            const hasThumbnailFile = thumbnailInput.files.length > 0;
+            const hasThumbnailUrl = thumbnailUrl && thumbnailUrl !== '';
+            // nếu không có thumbnail cũ
+            // thì bắt buộc upload ảnh mới
+            if (!hasThumbnailUrl && !hasThumbnailFile) {
+                showToast('Vui lòng tải lên ảnh bìa khoá học.', 'danger');
+                return;
+            }
+            document.getElementById('courseForm').submit();
         }
-
-        // async function saveCourseOverview() {
-        //     const title       = document.getElementById('title').value.trim();
-        //     const subtitle    = document.getElementById('subtitle').value.trim();
-        //     const description = document.getElementById('description').value.trim();
-        //     const price       = document.getElementById('price').value;
-        //     const tags        = document.getElementById('tagsHidden').value;
-        //     const thumbFile   = document.getElementById('thumbnailInput').files[0];
-        //     if (!title) {
-        //         showToast('Vui lòng nhập tiêu đề khoá học.', 'danger');
-        //         return;
-        //     }
-        //     const btn = document.getElementById('btnSaveOverview');
-        //     setLoading(btn, true);
-        //     try {
-        //         /* Dùng FormData để gửi kèm file ảnh nếu có */
-        //         const fd = new FormData();
-        //         fd.append('title',       title);
-        //         fd.append('subtitle',    subtitle);
-        //         fd.append('description', description);
-        //         fd.append('price',       price || 0);
-        //         fd.append('tags',        tags);
-        //         if (thumbFile) fd.append('thumbnailFile', thumbFile);
-        //         if (courseId)  fd.append('courseId', courseId); /* gửi id khi update */
-        //         if (courseVersionId)  fd.append('courseVersionId', courseVersionId); /* gửi id khi update */
-        //         const res  = await fetch('/create/course-overview', { method: 'POST', body: fd });
-        //         const data = await res.json();
-        //         if (!res.ok) throw new Error(data.message || 'Lỗi server');
-        //         courseId = data.id;
-        //         document.getElementById('courseId').value = courseId;
-        //         /* Mở khoá phần nội dung */
-        //         document.getElementById('curriculumLocked')?.remove();
-        //         document.getElementById('curriculumBuilder')?.classList.remove('d-none');
-        //         showToast('Đã lưu thông tin khoá học!', 'success');
-        //     } catch (err) {
-        //         showToast('Lỗi: ' + err.message, 'danger');
-        //     } finally {
-        //         setLoading(btn, false);
-        //     }
-        // }
-
         /* ═══════════════════════════════════════════════════════════════
            2. SECTION
         ═══════════════════════════════════════════════════════════════ */
@@ -1503,22 +1485,40 @@
         /* ═══════════════════════════════════════════════════════════════
            6. THUMBNAIL
         ═══════════════════════════════════════════════════════════════ */
-        function previewThumbnail(e) {
-            const file = e.target.files[0];
+        // function previewThumbnail(e) {
+        //     const file = e.target.files[0];
+        //     if (!file) return;
+        //     const reader = new FileReader();
+        //     reader.onload = ev => {
+        //         document.getElementById('thumb-img').src = ev.target.result;
+        //         document.getElementById('thumbnail-preview').style.display = 'block';
+        //         document.getElementById('thumb-zone').style.display = 'none';
+        //     };
+        //     reader.readAsDataURL(file);
+        // }
+        //
+        // function removeThumbnail() {
+        //     document.getElementById('thumbnail-preview').style.display = 'none';
+        //     document.getElementById('thumb-zone').style.display = 'block';
+        //     document.getElementById('thumbnailInput').value = '';
+        // }
+        function previewThumbnail(event) {
+            const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = ev => {
-                document.getElementById('thumb-img').src = ev.target.result;
-                document.getElementById('thumbnail-preview').style.display = 'block';
-                document.getElementById('thumb-zone').style.display = 'none';
+            reader.onload = function(e) {
+                document.getElementById("thumb-img").src = e.target.result;
+                document.getElementById("thumbnail-preview").style.display = "block";
+                document.getElementById("thumb-zone").style.display = "none";
             };
             reader.readAsDataURL(file);
         }
 
         function removeThumbnail() {
-            document.getElementById('thumbnail-preview').style.display = 'none';
-            document.getElementById('thumb-zone').style.display = 'block';
-            document.getElementById('thumbnailInput').value = '';
+            document.getElementById("thumbnailInput").value = "";
+            document.getElementById("thumb-img").src = "";
+            document.getElementById("thumbnail-preview").style.display = "none";
+            document.getElementById("thumb-zone").style.display = "block";
         }
 
         /* ═══════════════════════════════════════════════════════════════

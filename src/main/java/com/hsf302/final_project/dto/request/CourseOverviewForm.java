@@ -20,4 +20,5 @@ public class CourseOverviewForm {
     BigDecimal price;
     String tags;
     MultipartFile thumbnailFile;
+    String thumbnailUrl;
 }

@@ -1,16 +1,22 @@
 package com.hsf302.final_project.service;
 
 import com.hsf302.final_project.constant.ECourseStatus;
+import com.hsf302.final_project.constant.EFilePurpose;
+import com.hsf302.final_project.constant.EFileType;
 import com.hsf302.final_project.dto.request.CourseOverviewForm;
+import com.hsf302.final_project.entity.AppFile;
 import com.hsf302.final_project.entity.Course;
 import com.hsf302.final_project.entity.CourseVersion;
 import com.hsf302.final_project.entity.Tag;
+import com.hsf302.final_project.repository.AppFileRepository;
 import com.hsf302.final_project.repository.CourseRepository;
 import com.hsf302.final_project.repository.CourseVersionRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.stream.Collectors;
 
@@ -20,8 +26,9 @@ import java.util.stream.Collectors;
 public class CourseServiceImpl implements CourseService {
     private final CourseRepository courseRepository;
     private final CourseVersionRepository courseVersionRepository;
+    private final AppFileRepository appFileRepository;
+    private final S3Service s3Service;
 
-    @Transactional
     public Long createCourseOverview(CourseOverviewForm form) {
         Course course;
         CourseVersion version;
@@ -55,6 +62,28 @@ public class CourseServiceImpl implements CourseService {
                         ? form.getPrice()
                         : BigDecimal.ZERO
         );
+        // thumbnail
+        MultipartFile thumbnailFile = form.getThumbnailFile();
+        if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
+            // upload lên S3
+            String fileUrl = s3Service.uploadFileWithoutException(thumbnailFile);
+            // tạo AppFile
+            AppFile appFile = new AppFile();
+            appFile.setFileName(thumbnailFile.getOriginalFilename());
+            appFile.setFileUrl(fileUrl);
+            appFile.setFileType(EFileType.IMAGE);
+            appFile.setPurpose(EFilePurpose.COURSE_THUMBNAIL);
+            // lấy extension
+            String originalName = thumbnailFile.getOriginalFilename();
+            if (originalName != null && originalName.contains(".")) {
+                String extension = originalName.substring(originalName.lastIndexOf(".") + 1);
+                appFile.setExtension(extension);
+            }
+            // save AppFile
+            appFileRepository.save(appFile);
+            // set vào version
+            version.setThumbnail(appFile);
+        }
         courseVersionRepository.save(version);
         // chỉ set version cho course khi create hoặc chưa có current draft version
         if (course.getCurrentDraftVersion() == null) {
@@ -96,6 +125,7 @@ public class CourseServiceImpl implements CourseService {
                     .map(Tag::getTagName)
                     .collect(Collectors.joining(", "));
             form.setTags(tags);
+            form.setThumbnailUrl(version.getThumbnail().getFileUrl());
         }
         return form;
     }

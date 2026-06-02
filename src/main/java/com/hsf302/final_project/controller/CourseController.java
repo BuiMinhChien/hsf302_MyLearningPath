@@ -43,7 +43,6 @@ public class CourseController {
             Long id = Long.parseLong(courseId);
             courseForm = courseService.getCourseOverview(id);
         }
-        logger.info("HGASFDASFSADFASDFASDFASDF: "+courseForm.toString());
         model.addAttribute("courseForm", courseForm);
         return "pages/createCourse/createCourse";
     }
