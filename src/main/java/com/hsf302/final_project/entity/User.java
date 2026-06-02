@@ -63,4 +63,11 @@ public class User extends BaseEntity {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     Wallet wallet;
+
+    // ---- Reset Password ----
+    @Column(name = "reset_token", length = 100)
+    String resetToken;
+
+    @Column(name = "reset_token_expiry")
+    java.time.LocalDateTime resetTokenExpiry;
 }

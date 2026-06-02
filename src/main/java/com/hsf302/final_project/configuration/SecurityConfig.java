@@ -1,5 +1,6 @@
 package com.hsf302.final_project.configuration;
 
+import com.hsf302.final_project.security.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +12,9 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final CustomOAuth2UserService customOAuth2UserService;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -24,6 +28,7 @@ public class SecurityConfig {
                                 "/home",
                                 "/login",
                                 "/forgot-password",
+                                "/reset-password",    // link từ email không cần đăng nhập
                                 "/register",
                                 "/css/**",
                                 "/js/**",
@@ -49,6 +54,15 @@ public class SecurityConfig {
                         .failureUrl("/login?error=true")
                         .permitAll()
                 )
+                // ✅ Google OAuth2 Login
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/login")                          // dùng chung trang login
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService) // xử lý user từ Google
+                        )
+                        .defaultSuccessUrl("/home", true)
+                        .failureUrl("/login?error=oauth2")
+                )
                 // logout
                 .logout(logout -> logout
                         .logoutUrl("/logout")
@@ -69,4 +83,4 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-}
+}

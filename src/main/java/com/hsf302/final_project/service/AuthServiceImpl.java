@@ -9,11 +9,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Random;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Override
     public UserResponse login(LoginRequest request) {
@@ -44,4 +47,29 @@ public class AuthServiceImpl implements AuthService {
                 .status(user.getStatus())
                 .build();
     }
+
+    @Override
+    public void forgotPassword(String email) {
+        // 1. Kiểm tra email có trong DB không
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email không tồn tại"));
+        // 2. Tự sinh mật khẩu mới ngẫu nhiên 8 ký tự
+        String newPassword = generateRandomPassword();
+        // 3. Mã hoá BCrypt rồi lưu vào DB
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        // 4. Gửi mật khẩu CHƯA mã hoá qua email cho user
+        emailService.sendNewPasswordEmail(email, newPassword);
+    }
+    // Hàm tạo mật khẩu ngẫu nhiên
+    private String generateRandomPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder sb = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < 8; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
+    }
 }
+
