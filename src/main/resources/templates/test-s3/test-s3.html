@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Upload Amazon S3</title>
+    <!-- Thêm CSS cho oách xà lách -->
+    <style>
+        body { font-family: Arial, sans-serif; padding: 50px; background-color: #f4f7f6; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h2 { color: #ff9900; } /* Màu cam đặc trưng của AWS */
+        .result { margin-top: 20px; padding: 15px; background: #eef; border-radius: 5px; word-break: break-all; }
+        img, video { max-width: 100%; margin-top: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🚀 S3 Upload Tester</h2>
+
+    <!-- In ra thông báo nế có lỗi -->
+    <p style="color: red" th:if="${error}" th:text="${error}"></p>
+
+    <!-- Form Upload File -->
+    <form action="/test-s3/upload" method="post" enctype="multipart/form-data">
+        <label><b>Chọn file (Ảnh hoặc Video):</b></label><br><br>
+        <input type="file" name="file" required accept="image/*,video/*" />
+        <br><br>
+        <button type="submit" style="padding: 10px 20px; background: #ff9900; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Tải lên S3 ngay
+        </button>
+    </form>
+
+    <!-- Hiển thị kết quả thành công -->
+    <div class="result" th:if="${fileUrl}">
+        <h3 style="color: green">✅ Upload Thành Công!</h3>
+        <p><b>Link file trên S3:</b></p>
+        <a th:href="${fileUrl}" target="_blank" th:text="${fileUrl}"></a>
+
+        <!-- Nếu là ảnh thì hiện ảnh, video thì hiện video -->
+        <hr>
+        <p>Bản xem trước:</p>
+        <img th:if="${#strings.contains(fileUrl, '.jpg') or #strings.contains(fileUrl, '.png') or #strings.contains(fileUrl, '.jpeg')}" th:src="${fileUrl}" />
+        <video th:unless="${#strings.contains(fileUrl, '.jpg') or #strings.contains(fileUrl, '.png') or #strings.contains(fileUrl, '.jpeg')}" th:src="${fileUrl}" controls></video>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,40 +1,61 @@
 package com.hsf302.final_project.service;
+
+import com.hsf302.final_project.constant.ECourseStatus;
 import com.hsf302.final_project.dto.response.CourseCardDTO;
 import com.hsf302.final_project.entity.Course;
 import com.hsf302.final_project.entity.CourseVersion;
 import com.hsf302.final_project.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
-import com.hsf302.final_project.constant.ECourseStatus;
+
 @Service
 @RequiredArgsConstructor
 public class CourseServiceImpl implements CourseService {
+
     private final CourseRepository courseRepository;
+
     @Override
+    @Transactional(readOnly = true)
     public List<CourseCardDTO> getTop5Courses() {
-        return courseRepository.findTop5PublishedCourses(ECourseStatus.APPROVED)
-                .stream()
-                .map(this::mapToDTO)
+
+        // Lấy danh sách khoá học đã duyệt, không bị xoá
+        List<Course> courses = courseRepository
+                .findByDeleteFlagFalseAndCurrentPublishedVersion_StatusOrderByCreatedAtDesc(
+                        ECourseStatus.APPROVED
+                );
+
+        // Giới hạn 5 khoá học đầu tiên
+        // rồi chuyển từng Course sang CourseCardDTO
+        return courses.stream()
+                .limit(5)
+                .map(this::chuyenDoiSangDTO)
                 .toList();
     }
-    private CourseCardDTO mapToDTO(Course course) {
-        CourseVersion version = course.getCurrentPublishedVersion();
-        // Lấy URL thumbnail (nếu có)
-        String thumbnailUrl = null;
-        if (version.getThumbnail() != null) {
-            thumbnailUrl = version.getThumbnail().getFileUrl(); // tuỳ theo field trong AppFile
+
+    // Hàm chuyển đổi từ Course (entity) → CourseCardDTO
+    private CourseCardDTO chuyenDoiSangDTO(Course course) {
+
+        CourseVersion phienBan = course.getCurrentPublishedVersion();
+
+        // Lấy link ảnh nếu có, không thì để null
+        String anhThumbnail = null;
+        if (phienBan.getThumbnail() != null) {
+            anhThumbnail = phienBan.getThumbnail().getFileUrl();
         }
+
+        // Trả về DTO với các thông tin cần hiển thị
         return CourseCardDTO.builder()
                 .courseId(course.getCourseId())
-                .title(version.getTitle())
-                .subtitle(version.getSubtitle())
+                .title(phienBan.getTitle())
+                .subtitle(phienBan.getSubtitle())
                 .instructorName(course.getInstructor().getFullName())
-                .price(version.getPrice())
+                .price(phienBan.getPrice())
                 .averageRating(course.getAverageRating())
                 .totalReviews(course.getTotalReviews())
-                .thumbnailUrl(thumbnailUrl)
+                .thumbnailUrl(anhThumbnail)
                 .build();
     }
-
 }
