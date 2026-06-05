@@ -10,6 +10,8 @@ import com.hsf302.final_project.entity.*;
 import com.hsf302.final_project.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,7 +31,41 @@ public class CourseServiceImpl implements CourseService {
     private final QuizQuestionRepository quizQuestionRepository;
     private final QuizAnswerRepository quizAnswerRepository;
     private final VideoProcessingService videoProcessingService;
+    private final UserRepository userRepository;
     private final S3Service s3Service;
+
+    @Override
+    public List<CourseCardDTO> getTop5Courses() {
+        // Lấy danh sách khoá học đã duyệt, không bị xoá
+        List<Course> courses = courseRepository.findByDeleteFlagFalseAndCurrentPublishedVersion_StatusOrderByCreatedAtDesc(ECourseStatus.APPROVED);
+        // Giới hạn 5 khoá học đầu tiên
+        // rồi chuyển từng Course sang CourseCardDTO
+        return courses.stream()
+                .limit(5)
+                .map(this::convertToDto)
+                .toList();
+    }
+
+    // Hàm chuyển đổi từ Course (entity) → CourseCardDTO
+    private CourseCardDTO convertToDto(Course course) {
+        CourseVersion version = course.getCurrentPublishedVersion();
+        // Lấy link ảnh nếu có, không thì để null
+        String thumbnail = null;
+        if (version.getThumbnail() != null) {
+            thumbnail = version.getThumbnail().getFileUrl();
+        }
+        // Trả về DTO với các thông tin cần hiển thị
+        return CourseCardDTO.builder()
+                .courseId(course.getCourseId())
+                .title(version.getTitle())
+                .subtitle(version.getSubtitle())
+                .instructorName(course.getInstructor().getFullName())
+                .price(version.getPrice())
+                .averageRating(course.getAverageRating())
+                .totalReviews(course.getTotalReviews())
+                .thumbnailUrl(thumbnail)
+                .build();
+    }
 
     public Long createCourseOverview(CourseOverviewForm form) {
         Course course;
@@ -47,6 +83,11 @@ public class CourseServiceImpl implements CourseService {
         // create
         else {
             course = new Course();
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            User instructor = userRepository.findByEmail(email)
+                            .orElseThrow(() -> new RuntimeException("User not found"));
+            course.setInstructor(instructor);
             course.setAverageRating(BigDecimal.ZERO);
             course.setTotalReviews(0);
             course.setTotalStudents(0);

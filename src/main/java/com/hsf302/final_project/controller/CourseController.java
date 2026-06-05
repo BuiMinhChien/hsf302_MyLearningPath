@@ -30,15 +30,6 @@ public class CourseController {
     private static final Logger logger = LoggerFactory.getLogger(CourseController.class);
     private final CourseService courseService;
 
-    @GetMapping({"/home", "/"})
-    public String homePage(Model model) {
-        model.addAttribute(
-                "pageTitle",
-                "Trang chủ"
-        );
-        return "pages/home";
-    }
-
     @GetMapping("/create-course/{courseId}")
     public String createCoursePage(@PathVariable String courseId, Model model) {
         CourseOverviewForm courseForm;
