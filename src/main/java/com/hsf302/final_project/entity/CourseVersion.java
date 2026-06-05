@@ -7,7 +7,9 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -46,7 +48,9 @@ public class CourseVersion extends BaseEntity {
     @Column(name = "status", length = 30)
     ECourseStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
     @JoinColumn(name = "thumbnail_file_id")
     AppFile thumbnail;
 
@@ -61,4 +65,11 @@ public class CourseVersion extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
     Course course;
+
+    @OneToMany(
+            mappedBy = "courseVersion",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    List<CourseSection> sections = new ArrayList<>();
 }

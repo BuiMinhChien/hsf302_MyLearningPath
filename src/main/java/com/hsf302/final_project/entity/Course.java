@@ -6,6 +6,8 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "courses")
@@ -17,7 +19,6 @@ import java.math.BigDecimal;
 @Builder
 @Slf4j
 public class Course extends BaseEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "course_id")
@@ -39,4 +40,15 @@ public class Course extends BaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "current_published_version_id")
     CourseVersion currentPublishedVersion;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "current_draft_version_id")
+    CourseVersion currentDraftVersion;
+
+    @OneToMany(
+            mappedBy = "course",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    List<CourseVersion> versions = new ArrayList<>();
 }
