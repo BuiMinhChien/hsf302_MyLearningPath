@@ -6,6 +6,8 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.persistence.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "lessons")
 @NoArgsConstructor
@@ -36,10 +38,16 @@ public class Lesson extends BaseEntity {
     @Column(name = "display_order")
     Integer displayOrder;
 
+    //TẠI SAO LẠI LÀ MANY TO ONE
     // VIDEO
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "file_id")
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "video_file_id")
     AppFile video;
+
+    // SUBTITLE
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "subtitle_file_id")
+    AppFile subtitle;
 
     @Column(name = "duration_seconds")
     Integer durationSeconds;
@@ -47,4 +55,7 @@ public class Lesson extends BaseEntity {
     // ARTICLE
     @Column(name = "article_content", columnDefinition = "NVARCHAR(MAX)")
     String articleContent;
+
+    @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<QuizQuestion> questions;
 }
