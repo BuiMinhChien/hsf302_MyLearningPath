@@ -33,6 +33,8 @@ public class CourseServiceImpl implements CourseService {
     private final VideoProcessingService videoProcessingService;
     private final UserRepository userRepository;
     private final S3Service s3Service;
+    private final LessonCommentRepository lessonCommentRepository;
+    private final CourseFeedbackRepository courseFeedbackRepository;
 
     @Override
     public List<CourseCardDTO> getTop5Courses() {
@@ -437,5 +439,163 @@ public class CourseServiceImpl implements CourseService {
         course.setCurrentDraftVersion(null);
         courseVersionRepository.save(version);
         courseRepository.save(course);
+    }
+
+    @Override
+    public CourseDetailResponse getCourseDetail(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+
+        // Ưu tiên lấy phiên bản đã publish
+        CourseVersion version = course.getCurrentPublishedVersion();
+        if (version == null) {
+            // Nếu chưa có version publish, có thể coi bản nháp (nếu có)
+            version = course.getCurrentDraftVersion();
+        }
+        if (version == null && !course.getVersions().isEmpty()) {
+            version = course.getVersions().get(0);
+        }
+        if (version == null) {
+            throw new RuntimeException("Không tìm thấy phiên bản khoá học nào");
+        }
+
+        String thumbnailUrl = null;
+        if (version.getThumbnail() != null) {
+            thumbnailUrl = version.getThumbnail().getFileUrl();
+        }
+
+        String instructorName = course.getInstructor().getFullName();
+        String instructorEmail = course.getInstructor().getEmail();
+        String instructorAvatarUrl = null;
+        if (course.getInstructor().getAvatar() != null) {
+            instructorAvatarUrl = course.getInstructor().getAvatar().getFileUrl();
+        }
+
+        List<SectionResponse> sections = getSectionsByCourseVersionId(version.getCourseVersionId());
+
+        return CourseDetailResponse.builder()
+                .courseId(course.getCourseId())
+                .title(version.getTitle())
+                .subtitle(version.getSubtitle())
+                .description(version.getDescription())
+                .price(version.getPrice())
+                .thumbnailUrl(thumbnailUrl)
+                .averageRating(course.getAverageRating())
+                .totalReviews(course.getTotalReviews())
+                .totalStudents(course.getTotalStudents())
+                .instructorName(instructorName)
+                .instructorEmail(instructorEmail)
+                .instructorAvatarUrl(instructorAvatarUrl)
+                .sections(sections)
+                .build();
+    }
+
+    @Override
+    public List<CommentResponse> getCommentsByLessonId(Long lessonId) {
+        List<LessonComment> comments = lessonCommentRepository.findByLesson_LessonIdOrderByCreatedAtDesc(lessonId);
+        return comments.stream().map(c -> {
+            String avatarUrl = null;
+            if (c.getUser().getAvatar() != null) {
+                avatarUrl = c.getUser().getAvatar().getFileUrl();
+            }
+            return CommentResponse.builder()
+                    .commentId(c.getCommentId())
+                    .userName(c.getUser().getFullName())
+                    .userEmail(c.getUser().getEmail())
+                    .avatarUrl(avatarUrl)
+                    .content(c.getContent())
+                    .createdAt(c.getCreatedAt())
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public CommentResponse addComment(Long lessonId, String content, User user) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new RuntimeException("Lesson not found"));
+
+        LessonComment comment = new LessonComment();
+        comment.setLesson(lesson);
+        comment.setUser(user);
+        comment.setContent(content);
+
+        LessonComment saved = lessonCommentRepository.save(comment);
+
+        String avatarUrl = null;
+        if (user.getAvatar() != null) {
+            avatarUrl = user.getAvatar().getFileUrl();
+        }
+
+        return CommentResponse.builder()
+                .commentId(saved.getCommentId())
+                .userName(user.getFullName())
+                .userEmail(user.getEmail())
+                .avatarUrl(avatarUrl)
+                .content(saved.getContent())
+                .createdAt(saved.getCreatedAt())
+                .build();
+    }
+
+    @Override
+    public List<FeedbackResponse> getFeedbackByCourseId(Long courseId) {
+        List<CourseFeedback> feedbacks = courseFeedbackRepository.findByCourse_CourseIdOrderByCreatedAtDesc(courseId);
+        return feedbacks.stream().map(f -> {
+            String avatarUrl = null;
+            if (f.getStudent().getAvatar() != null) {
+                avatarUrl = f.getStudent().getAvatar().getFileUrl();
+            }
+            return FeedbackResponse.builder()
+                    .feedbackId(f.getFeedbackId())
+                    .studentName(f.getStudent().getFullName())
+                    .studentEmail(f.getStudent().getEmail())
+                    .studentAvatarUrl(avatarUrl)
+                    .rating(f.getRating())
+                    .comment(f.getComment())
+                    .createdAt(f.getCreatedAt())
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public FeedbackResponse addFeedback(Long courseId, Integer rating, String comment, User user) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+
+        CourseFeedback feedback = courseFeedbackRepository
+                .findByCourse_CourseIdAndStudent_UserId(courseId, user.getUserId())
+                .orElse(new CourseFeedback());
+
+        feedback.setCourse(course);
+        feedback.setStudent(user);
+        feedback.setRating(rating);
+        feedback.setComment(comment);
+
+        CourseFeedback saved = courseFeedbackRepository.save(feedback);
+
+        List<CourseFeedback> allFeedbacks = courseFeedbackRepository.findByCourse_CourseIdOrderByCreatedAtDesc(courseId);
+        int totalReviews = allFeedbacks.size();
+        double sum = allFeedbacks.stream().mapToInt(CourseFeedback::getRating).sum();
+        double avg = totalReviews > 0 ? sum / totalReviews : 0.0;
+
+        course.setTotalReviews(totalReviews);
+        course.setAverageRating(BigDecimal.valueOf(avg));
+        courseRepository.save(course);
+
+        String avatarUrl = null;
+        if (user.getAvatar() != null) {
+            avatarUrl = user.getAvatar().getFileUrl();
+        }
+
+        return FeedbackResponse.builder()
+                .feedbackId(saved.getFeedbackId())
+                .studentName(user.getFullName())
+                .studentEmail(user.getEmail())
+                .studentAvatarUrl(avatarUrl)
+                .rating(saved.getRating())
+                .comment(saved.getComment())
+                .createdAt(saved.getCreatedAt())
+                .build();
     }
 }

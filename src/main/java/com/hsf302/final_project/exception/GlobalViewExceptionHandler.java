@@ -1,4 +1,4 @@
-package com.hsf302.final_project.exception.mvc;
+package com.hsf302.final_project.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;

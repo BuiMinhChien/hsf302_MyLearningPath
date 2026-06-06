@@ -166,63 +166,65 @@
 
                 <!-- Lặp qua danh sách khoá học từ Controller -->
                 <div class="col" th:each="course : ${courses}">
-                    <div class="course-card">
+                    <a th:href="@{/course/{id}(id=${course.courseId})}" class="text-decoration-none text-dark">
+                        <div class="course-card">
 
-                        <!-- Ảnh khoá học -->
-                        <img
-                                th:if="${course.thumbnailUrl != null}"
-                                th:src="${course.thumbnailUrl}"
-                                th:alt="${course.title}"
-                                class="course-thumbnail"
-                        >
-                        <!-- Placeholder nếu chưa có ảnh -->
-                        <div
-                                th:unless="${course.thumbnailUrl != null}"
-                                class="course-thumbnail-placeholder"
-                        >
-                            <i class="bi bi-play-circle-fill"></i>
+                            <!-- Ảnh khoá học -->
+                            <img
+                                    th:if="${course.thumbnailUrl != null}"
+                                    th:src="${course.thumbnailUrl}"
+                                    th:alt="${course.title}"
+                                    class="course-thumbnail"
+                            >
+                            <!-- Placeholder nếu chưa có ảnh -->
+                            <div
+                                    th:unless="${course.thumbnailUrl != null}"
+                                    class="course-thumbnail-placeholder"
+                            >
+                                <i class="bi bi-play-circle-fill"></i>
+                            </div>
+
+                            <div class="course-body">
+                                <!-- Tên khoá học -->
+                                <div class="course-title" th:text="${course.title}">
+                                    Tên khoá học
+                                </div>
+
+                                <!-- Tên giảng viên -->
+                                <div class="course-instructor" th:text="${course.instructorName}">
+                                    Giảng viên
+                                </div>
+
+                                <!-- Đánh giá sao -->
+                                <div class="star-rating">
+                                    <span class="star-score" th:text="${#numbers.formatDecimal(course.averageRating, 1, 1)}">4.5</span>
+                                    <span class="stars">
+                                        <!-- 5 sao động theo averageRating -->
+                                        <th:block th:with="rating=${course.averageRating.intValue()}">
+                                            <i th:each="i : ${#numbers.sequence(1, 5)}"
+                                               th:class="${i <= rating} ? 'bi bi-star-fill' : 'bi bi-star'">
+                                            </i>
+                                        </th:block>
+                                    </span>
+                                    <span class="star-count"
+                                          th:text="'(' + ${#numbers.formatInteger(course.totalReviews, 1, 'COMMA')} + ')'">
+                                        (1,234)
+                                    </span>
+                                </div>
+
+                                <!-- Giá tiền -->
+                                <div>
+                                    <span class="course-price"
+                                          th:text="${#numbers.formatInteger(course.price, 1, 'COMMA')} + ' ₫'">
+                                        259.000 ₫
+                                    </span>
+                                </div>
+
+                                <!-- Badge Bán chạy nhất -->
+                                <span class="badge-bestseller">🔥 Bán chạy nhất</span>
+                            </div>
                         </div>
-
-                        <div class="course-body">
-                            <!-- Tên khoá học -->
-                            <div class="course-title" th:text="${course.title}">
-                                Tên khoá học
-                            </div>
-
-                            <!-- Tên giảng viên -->
-                            <div class="course-instructor" th:text="${course.instructorName}">
-                                Giảng viên
-                            </div>
-
-                            <!-- Đánh giá sao -->
-                            <div class="star-rating">
-                                <span class="star-score" th:text="${#numbers.formatDecimal(course.averageRating, 1, 1)}">4.5</span>
-                                <span class="stars">
-                                    <!-- 5 sao động theo averageRating -->
-                                    <th:block th:with="rating=${course.averageRating.intValue()}">
-                                        <i th:each="i : ${#numbers.sequence(1, 5)}"
-                                           th:class="${i <= rating} ? 'bi bi-star-fill' : 'bi bi-star'">
-                                        </i>
-                                    </th:block>
-                                </span>
-                                <span class="star-count"
-                                      th:text="'(' + ${#numbers.formatInteger(course.totalReviews, 1, 'COMMA')} + ')'">
-                                    (1,234)
-                                </span>
-                            </div>
-
-                            <!-- Giá tiền -->
-                            <div>
-                                <span class="course-price"
-                                      th:text="${#numbers.formatInteger(course.price, 1, 'COMMA')} + ' ₫'">
-                                    259.000 ₫
-                                </span>
-                            </div>
-
-                            <!-- Badge Bán chạy nhất -->
-                            <span class="badge-bestseller">🔥 Bán chạy nhất</span>
-                        </div>
-                    </div>
+                    </a>
                 </div>
 
             </div>

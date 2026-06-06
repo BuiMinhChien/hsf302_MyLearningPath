@@ -1,0 +1,1766 @@
+<!--<!DOCTYPE html>-->
+<!--<html-->
+<!--        lang="vi"-->
+<!--        xmlns:th="http://www.thymeleaf.org"-->
+<!--        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"-->
+<!--        layout:decorate="~{layouts/main-layout}"-->
+<!--&gt;-->
+
+<!--<head>-->
+<!--    <title th:text="${course.title} + ' - Chi tiết khoá học'"></title>-->
+<!--    &lt;!&ndash; Bootstrap Icons &ndash;&gt;-->
+<!--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">-->
+<!--    &lt;!&ndash; Google Fonts &ndash;&gt;-->
+<!--    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">-->
+<!--    &lt;!&ndash; HLS JS Library &ndash;&gt;-->
+<!--    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>-->
+
+<!--    <style>-->
+<!--        /* ===== GLOBAL STYLES & LAYOUT ===== */-->
+<!--        body {-->
+<!--            font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;-->
+<!--            background-color: #f8f9fa;-->
+<!--            color: #1c1d1f;-->
+<!--        }-->
+
+<!--        /* ===== PLAYER CONTROLLER / SCREEN HEADER ===== */-->
+<!--        .player-section {-->
+<!--            background-color: #1c1d1f;-->
+<!--            padding: 30px 0;-->
+<!--            color: white;-->
+<!--            border-bottom: 1px solid #3e4143;-->
+<!--        }-->
+
+<!--        .screen-container {-->
+<!--            max-width: 1100px;-->
+<!--            margin: 0 auto;-->
+<!--        }-->
+
+<!--        .screen-frame {-->
+<!--            position: relative;-->
+<!--            width: 100%;-->
+<!--            aspect-ratio: 16/9;-->
+<!--            background-color: #000;-->
+<!--            border-radius: 24px;-->
+<!--            overflow: hidden;-->
+<!--            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);-->
+<!--        }-->
+
+<!--        video {-->
+<!--            width: 100%;-->
+<!--            height: 100%;-->
+<!--            object-fit: contain;-->
+<!--            background: #000000;-->
+<!--        }-->
+
+<!--        /* Article Frame */-->
+<!--        .article-frame {-->
+<!--            width: 100%;-->
+<!--            height: 100%;-->
+<!--            background-color: #ffffff;-->
+<!--            color: #1c1d1f;-->
+<!--            padding: 40px;-->
+<!--            overflow-y: auto;-->
+<!--        }-->
+
+<!--        .article-title {-->
+<!--            font-size: 1.8rem;-->
+<!--            font-weight: 700;-->
+<!--            color: #1c1d1f;-->
+<!--            margin-bottom: 20px;-->
+<!--            border-bottom: 2px solid #a435f0;-->
+<!--            padding-bottom: 10px;-->
+<!--        }-->
+
+<!--        .article-body {-->
+<!--            font-size: 1.05rem;-->
+<!--            line-height: 1.7;-->
+<!--        }-->
+
+<!--        /* Quiz Frame */-->
+<!--        .quiz-frame {-->
+<!--            width: 100%;-->
+<!--            height: 100%;-->
+<!--            background-color: #ffffff;-->
+<!--            color: #1c1d1f;-->
+<!--            padding: 40px;-->
+<!--            overflow-y: auto;-->
+<!--        }-->
+
+<!--        .quiz-title {-->
+<!--            font-size: 1.6rem;-->
+<!--            font-weight: 700;-->
+<!--            color: #1c1d1f;-->
+<!--            margin-bottom: 25px;-->
+<!--            border-bottom: 2px solid #198754;-->
+<!--            padding-bottom: 10px;-->
+<!--        }-->
+
+<!--        .question-card {-->
+<!--            background-color: #f8f9fa;-->
+<!--            border: 1px solid #e2e8f0;-->
+<!--            border-radius: 8px;-->
+<!--            padding: 20px;-->
+<!--            margin-bottom: 20px;-->
+<!--        }-->
+
+<!--        .option-item {-->
+<!--            padding: 12px 18px;-->
+<!--            border: 1px solid #cbd5e1;-->
+<!--            border-radius: 6px;-->
+<!--            margin-top: 10px;-->
+<!--            cursor: pointer;-->
+<!--            transition: all 0.2s;-->
+<!--            display: flex;-->
+<!--            align-items: center;-->
+<!--        }-->
+
+<!--        .option-item:hover {-->
+<!--            background-color: #f1f5f9;-->
+<!--        }-->
+
+<!--        .option-item input {-->
+<!--            margin-right: 12px;-->
+<!--        }-->
+
+<!--        .option-item.selected {-->
+<!--            border-color: #a435f0;-->
+<!--            background-color: #f3e8ff;-->
+<!--        }-->
+
+<!--        .option-item.correct {-->
+<!--            border-color: #198754 !important;-->
+<!--            background-color: #d1e7dd !important;-->
+<!--            color: #0f5132;-->
+<!--        }-->
+
+<!--        .option-item.incorrect {-->
+<!--            border-color: #dc3545 !important;-->
+<!--            background-color: #f8d7da !important;-->
+<!--            color: #842029;-->
+<!--        }-->
+
+<!--        /* Empty Player Placeholder */-->
+<!--        .empty-player {-->
+<!--            display: flex;-->
+<!--            flex-direction: column;-->
+<!--            align-items: center;-->
+<!--            justify-content: center;-->
+<!--            width: 100%;-->
+<!--            height: 100%;-->
+<!--            color: #cbd5e1;-->
+<!--            text-align: center;-->
+<!--            padding: 20px;-->
+<!--            background: linear-gradient(135deg, #1c1d1f 0%, #2d2f31 100%);-->
+<!--        }-->
+
+<!--        .empty-player i {-->
+<!--            font-size: 4rem;-->
+<!--            color: #a435f0;-->
+<!--            margin-bottom: 15px;-->
+<!--        }-->
+
+<!--        /* ===== TAB BAR AND SECTIONS ===== */-->
+<!--        .detail-tabs-section {-->
+<!--            padding: 40px 0;-->
+<!--        }-->
+
+<!--        .udemy-tabs {-->
+<!--            border-bottom: 1px solid #d1d7dc;-->
+<!--            margin-bottom: 30px;-->
+<!--        }-->
+
+<!--        .udemy-tabs .nav-link {-->
+<!--            color: #6a6f73;-->
+<!--            font-weight: 700;-->
+<!--            font-size: 1.05rem;-->
+<!--            border: none;-->
+<!--            border-bottom: 3px solid transparent;-->
+<!--            padding: 12px 20px;-->
+<!--            transition: all 0.15s ease-in-out;-->
+<!--        }-->
+
+<!--        .udemy-tabs .nav-link:hover {-->
+<!--            color: #1c1d1f;-->
+<!--            border-bottom: 3px solid #6a6f73;-->
+<!--        }-->
+
+<!--        .udemy-tabs .nav-link.active {-->
+<!--            color: #1c1d1f;-->
+<!--            background: transparent;-->
+<!--            border-bottom: 3px solid #a435f0;-->
+<!--        }-->
+
+<!--        /* Curriculum Accordion Styling */-->
+<!--        .accordion-item {-->
+<!--            border: 1px solid #d1d7dc;-->
+<!--            margin-bottom: 8px;-->
+<!--            border-radius: 6px !important;-->
+<!--            overflow: hidden;-->
+<!--            background: white;-->
+<!--        }-->
+
+<!--        .accordion-button {-->
+<!--            background-color: #f7f9fa;-->
+<!--            font-weight: 600;-->
+<!--            font-size: 1.05rem;-->
+<!--            color: #1c1d1f;-->
+<!--            padding: 18px 24px;-->
+<!--        }-->
+
+<!--        .accordion-button:not(.collapsed) {-->
+<!--            background-color: #f7f9fa;-->
+<!--            color: #1c1d1f;-->
+<!--            box-shadow: none;-->
+<!--        }-->
+
+<!--        .lesson-list-item {-->
+<!--            display: flex;-->
+<!--            align-items: center;-->
+<!--            padding: 14px 24px;-->
+<!--            border-bottom: 1px solid #e2e8f0;-->
+<!--            cursor: pointer;-->
+<!--            transition: background 0.2s;-->
+<!--        }-->
+
+<!--        .lesson-list-item:hover {-->
+<!--            background-color: #f8fafc;-->
+<!--        }-->
+
+<!--        .lesson-list-item.active {-->
+<!--            background-color: #f3e8ff;-->
+<!--            border-left: 4px solid #a435f0;-->
+<!--        }-->
+
+<!--        .lesson-icon {-->
+<!--            font-size: 1.25rem;-->
+<!--            color: #6a6f73;-->
+<!--            margin-right: 15px;-->
+<!--        }-->
+
+<!--        .lesson-list-item.active .lesson-icon {-->
+<!--            color: #a435f0;-->
+<!--        }-->
+
+<!--        .lesson-info {-->
+<!--            flex-grow: 1;-->
+<!--        }-->
+
+<!--        .lesson-title {-->
+<!--            font-weight: 500;-->
+<!--            font-size: 0.95rem;-->
+<!--            color: #1c1d1f;-->
+<!--        }-->
+
+<!--        .lesson-duration {-->
+<!--            font-size: 0.8rem;-->
+<!--            color: #6a6f73;-->
+<!--        }-->
+
+<!--        /* Comments Styling */-->
+<!--        .comment-box {-->
+<!--            background: white;-->
+<!--            border: 1px solid #d1d7dc;-->
+<!--            border-radius: 8px;-->
+<!--            padding: 24px;-->
+<!--            margin-bottom: 30px;-->
+<!--        }-->
+
+<!--        .comment-item {-->
+<!--            display: flex;-->
+<!--            gap: 16px;-->
+<!--            padding: 20px 0;-->
+<!--            border-bottom: 1px solid #e2e8f0;-->
+<!--        }-->
+
+<!--        .comment-avatar {-->
+<!--            width: 48px;-->
+<!--            height: 48px;-->
+<!--            border-radius: 50%;-->
+<!--            background-color: #1c1d1f;-->
+<!--            color: white;-->
+<!--            display: flex;-->
+<!--            align-items: center;-->
+<!--            justify-content: center;-->
+<!--            font-weight: bold;-->
+<!--            font-size: 1.1rem;-->
+<!--            flex-shrink: 0;-->
+<!--        }-->
+
+<!--        .comment-body {-->
+<!--            flex-grow: 1;-->
+<!--        }-->
+
+<!--        .comment-author {-->
+<!--            font-weight: 700;-->
+<!--            font-size: 0.95rem;-->
+<!--            margin-bottom: 2px;-->
+<!--        }-->
+
+<!--        .comment-date {-->
+<!--            font-size: 0.8rem;-->
+<!--            color: #6a6f73;-->
+<!--            margin-bottom: 8px;-->
+<!--        }-->
+
+<!--        .comment-text {-->
+<!--            font-size: 0.95rem;-->
+<!--            line-height: 1.5;-->
+<!--            color: #1c1d1f;-->
+<!--        }-->
+
+<!--        /* Review and Star Styling */-->
+<!--        .stars-select {-->
+<!--            display: flex;-->
+<!--            gap: 8px;-->
+<!--            margin-bottom: 15px;-->
+<!--        }-->
+
+<!--        .stars-select i {-->
+<!--            font-size: 1.8rem;-->
+<!--            color: #d1d7dc;-->
+<!--            cursor: pointer;-->
+<!--            transition: color 0.1s;-->
+<!--        }-->
+
+<!--        .stars-select i.active, .stars-select i:hover {-->
+<!--            color: #f59e0b;-->
+<!--        }-->
+
+<!--        .review-summary-box {-->
+<!--            background-color: #f7f9fa;-->
+<!--            border: 1px solid #d1d7dc;-->
+<!--            border-radius: 8px;-->
+<!--            padding: 30px;-->
+<!--            text-align: center;-->
+<!--            margin-bottom: 30px;-->
+<!--        }-->
+
+<!--        .review-rating-score {-->
+<!--            font-size: 3.5rem;-->
+<!--            font-weight: 800;-->
+<!--            color: #b45309;-->
+<!--            line-height: 1;-->
+<!--            margin-bottom: 8px;-->
+<!--        }-->
+
+<!--        .review-stars {-->
+<!--            color: #f59e0b;-->
+<!--            font-size: 1.2rem;-->
+<!--            margin-bottom: 8px;-->
+<!--        }-->
+
+<!--        .review-count {-->
+<!--            font-size: 0.9rem;-->
+<!--            color: #6a6f73;-->
+<!--        }-->
+
+<!--        /* General course detail layout info card */-->
+<!--        .instructor-card {-->
+<!--            display: flex;-->
+<!--            gap: 20px;-->
+<!--            background: white;-->
+<!--            border: 1px solid #d1d7dc;-->
+<!--            border-radius: 8px;-->
+<!--            padding: 24px;-->
+<!--            margin-top: 20px;-->
+<!--        }-->
+
+<!--        .instructor-avatar {-->
+<!--            width: 72px;-->
+<!--            height: 72px;-->
+<!--            border-radius: 50%;-->
+<!--            background-color: #a435f0;-->
+<!--            color: white;-->
+<!--            display: flex;-->
+<!--            align-items: center;-->
+<!--            justify-content: center;-->
+<!--            font-weight: bold;-->
+<!--            font-size: 1.6rem;-->
+<!--        }-->
+<!--    </style>-->
+
+<!--    <script th:inline="javascript">-->
+<!--        /* ===== VIDEO PLAYER CONTROLLER MODULE ===== */-->
+<!--        let hls;-->
+
+<!--        function initVideoPlayer(videoUrl, subtitleUrl) {-->
+<!--            console.log("Khởi tạo video player với:");-->
+<!--            console.log(" - Video URL:", videoUrl);-->
+<!--            console.log(" - Subtitle URL:", subtitleUrl);-->
+
+<!--            const video = document.getElementById('hlsPlayer');-->
+<!--            if (!video) return;-->
+
+<!--            // Xoá và dọn dẹp trình phát HLS cũ-->
+<!--            if (hls) {-->
+<!--                hls.destroy();-->
+<!--            }-->
+
+<!--            // Dọn dẹp các track phụ đề cũ-->
+<!--            video.innerHTML = '';-->
+
+<!--            // Tạo và nhúng subtitle track mới-->
+<!--            if (subtitleUrl) {-->
+<!--                const track = document.createElement('track');-->
+<!--                track.kind = 'subtitles';-->
+<!--                track.label = 'English';-->
+<!--                track.srclang = 'en';-->
+<!--                track.src = subtitleUrl;-->
+<!--                track.default = true;-->
+<!--                video.appendChild(track);-->
+<!--            }-->
+
+<!--            // Khởi chạy HLS.js nếu thiết bị hỗ trợ-->
+<!--            if (Hls.isSupported()) {-->
+<!--                hls = new Hls();-->
+<!--                hls.loadSource(videoUrl);-->
+<!--                hls.attachMedia(video);-->
+<!--                hls.on(Hls.Events.MANIFEST_PARSED, function () {-->
+<!--                    video.play().catch((err) => {-->
+<!--                        console.log("Tự động phát video bị trình duyệt chặn:", err);-->
+<!--                    });-->
+<!--                });-->
+<!--            }-->
+<!--            // Hỗ trợ Safari native HLS-->
+<!--            else if (video.canPlayType('application/vnd.apple.mpegurl')) {-->
+<!--                video.src = videoUrl;-->
+<!--                video.addEventListener('loadedmetadata', () => {-->
+<!--                    video.play().catch((err) => {-->
+<!--                        console.log("Tự động phát video bị trình duyệt chặn:", err);-->
+<!--                    });-->
+<!--                });-->
+<!--            }-->
+<!--        }-->
+<!--    </script>-->
+<!--</head>-->
+
+<!--<body>-->
+
+<!--<div layout:fragment="content">-->
+
+<!--    &lt;!&ndash; ===== PLAYER AREA (TOP) ===== &ndash;&gt;-->
+<!--    <div class="player-section">-->
+<!--        <div class="screen-container">-->
+<!--            <div class="screen-frame">-->
+
+<!--                &lt;!&ndash; 1. VIDEO LAYER &ndash;&gt;-->
+<!--                <div id="videoContainer"-->
+<!--                     th:style="${activeLesson != null && activeLesson.type == 'VIDEO' && activeLesson.videoUrl != null} ? 'display:block;width:100%;height:100%;' : 'display:none;width:100%;height:100%;'">-->
+<!--                    <video id="hlsPlayer"-->
+<!--                           controls-->
+<!--                           playsinline-->
+<!--                           preload="auto"-->
+<!--                           crossorigin="anonymous"-->
+<!--                           style="width: 100%; height: 100%; display: block; object-fit: contain; background: black;">-->
+<!--                    </video>-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; 2. ARTICLE LAYER &ndash;&gt;-->
+<!--                <div id="articleContainer" class="article-frame"-->
+<!--                     th:style="${activeLesson != null && activeLesson.type == 'ARTICLE'} ? 'display: block;' : 'display: none;'">-->
+<!--                    <div class="article-title" id="articleTitle"-->
+<!--                         th:text="${activeLesson != null ? activeLesson.title : ''}">Tiêu đề bài viết-->
+<!--                    </div>-->
+<!--                    <div class="article-body" id="articleBody"-->
+<!--                         th:utext="${activeLesson != null ? activeLesson.articleContent : ''}">-->
+<!--                        Nội dung bài viết...-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; 3. QUIZ LAYER &ndash;&gt;-->
+<!--                <div id="quizContainer" class="quiz-frame"-->
+<!--                     th:style="${activeLesson != null && activeLesson.type == 'QUIZ'} ? 'display: block;' : 'display: none;'">-->
+<!--                    <div class="quiz-title" id="quizTitle"-->
+<!--                         th:text="${activeLesson != null ? 'Trắc nghiệm: ' + activeLesson.title : 'Bài kiểm tra trắc nghiệm'}">-->
+<!--                        Bài kiểm tra trắc nghiệm-->
+<!--                    </div>-->
+<!--                    <div id="quizContent">-->
+<!--                        <div th:if="${activeLesson != null && activeLesson.type == 'QUIZ' && activeLesson.questions != null}">-->
+<!--                            <div th:each="q, qStat : ${activeLesson.questions}" class="question-card"-->
+<!--                                 th:data-question-id="${q.id}">-->
+<!--                                <h5 class="fw-bold" th:text="'Câu ' + ${qStat.index + 1} + ': ' + ${q.questionText}">Câu hỏi</h5>-->
+<!--                                <div class="options-container">-->
+<!--                                    <div th:each="a : ${q.answers}" class="option-item" th:data-answer-id="${a.id}"-->
+<!--                                         th:data-correct="${a.isCorrect}" onclick="selectOption(this)">-->
+<!--                                        <input type="radio" th:name="'q_' + ${q.id}" th:value="${a.id}"-->
+<!--                                               style="pointer-events: none;">-->
+<!--                                        <span th:text="${a.text}">Đáp án</span>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                            <button class="btn btn-success px-4 py-2 mt-2" onclick="submitQuiz()">Nộp bài kiểm tra</button>-->
+<!--                            <div id="quizResult" class="mt-3 alert alert-info d-none fw-bold"></div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; 4. NO LESSON SELECTED PLACEHOLDER &ndash;&gt;-->
+<!--                <div id="emptyContainer" class="empty-player"-->
+<!--                     th:style="${activeLesson == null} ? 'display: flex;' : 'display: none;'">-->
+<!--                    <i class="bi bi-journal-album"></i>-->
+<!--                    <h3>Chào mừng đến với khoá học</h3>-->
+<!--                    <p>Hãy chọn một bài học ở thẻ Nội dung bài học bên dưới để bắt đầu học tập ngay nhé!</p>-->
+<!--                </div>-->
+
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash; ===== TABS CONTAINER (BOTTOM) ===== &ndash;&gt;-->
+<!--    <div class="detail-tabs-section">-->
+<!--        <div class="container" style="max-width: 1100px;">-->
+<!--            &lt;!&ndash; Tabs Navigation &ndash;&gt;-->
+<!--            <ul class="nav nav-tabs udemy-tabs" id="courseTabs" role="tablist">-->
+<!--                <li class="nav-item" role="presentation">-->
+<!--                    <button class="nav-link active" id="content-tab" data-bs-toggle="tab" data-bs-target="#content-pane"-->
+<!--                            type="button" role="tab" aria-controls="content-pane" aria-selected="true">-->
+<!--                        <i class="bi bi-list-ul me-2"></i>Nội dung bài học-->
+<!--                    </button>-->
+<!--                </li>-->
+<!--                <li class="nav-item" role="presentation">-->
+<!--                    <button class="nav-link" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview-pane"-->
+<!--                            type="button" role="tab" aria-controls="overview-pane" aria-selected="false">-->
+<!--                        <i class="bi bi-info-circle me-2"></i>Tổng quan khoá học-->
+<!--                    </button>-->
+<!--                </li>-->
+<!--                <li class="nav-item" role="presentation">-->
+<!--                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments-pane"-->
+<!--                            type="button" role="tab" aria-controls="comments-pane" aria-selected="false">-->
+<!--                        <i class="bi bi-chat-text me-2"></i>Bình luận bài học-->
+<!--                    </button>-->
+<!--                </li>-->
+<!--                <li class="nav-item" role="presentation">-->
+<!--                    <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-pane"-->
+<!--                            type="button" role="tab" aria-controls="reviews-pane" aria-selected="false">-->
+<!--                        <i class="bi bi-star me-2"></i>Đánh giá-->
+<!--                    </button>-->
+<!--                </li>-->
+<!--            </ul>-->
+
+<!--            &lt;!&ndash; Tabs Panes Content &ndash;&gt;-->
+<!--            <div class="tab-content" id="courseTabsContent">-->
+
+<!--                &lt;!&ndash; TAB 1: CURRICULUM ACCORDION &ndash;&gt;-->
+<!--                <div class="tab-pane fade show active" id="content-pane" role="tabpanel" aria-labelledby="content-tab" tabindex="0">-->
+<!--                    <div class="accordion" id="curriculumAccordion">-->
+<!--                        <div class="accordion-item" th:each="section, secStat : ${course.sections}">-->
+<!--                            <h2 class="accordion-header" th:id="'heading_' + ${section.id}">-->
+<!--                                <button class="accordion-button" type="button" data-bs-toggle="collapse"-->
+<!--                                        th:data-bs-target="'#collapse_' + ${section.id}" aria-expanded="true"-->
+<!--                                        th:aria-controls="'collapse_' + ${section.id}">-->
+<!--                                    <span class="flex-grow-1 text-start"-->
+<!--                                          th:text="'Chương ' + ${secStat.index + 1} + ': ' + ${section.title}">Chương 1: Tên chương</span>-->
+<!--                                    <span class="badge bg-secondary text-white rounded-pill ms-2"-->
+<!--                                          th:text="${section.lessons.size()} + ' bài'">3 bài</span>-->
+<!--                                </button>-->
+<!--                            </h2>-->
+<!--                            <div th:id="'collapse_' + ${section.id}" class="accordion-collapse collapse show"-->
+<!--                                 th:aria-labelledby="'heading_' + ${section.id}">-->
+<!--                                <div class="accordion-body p-0">-->
+<!--                                    <div class="list-group list-group-flush">-->
+<!--                                        <div th:each="lesson : ${section.lessons}"-->
+<!--                                             th:class="${activeLesson != null && activeLesson.id == lesson.id} ? 'lesson-list-item list-group-item active' : 'lesson-list-item list-group-item'"-->
+<!--                                             th:data-lesson-id="${lesson.id}"-->
+<!--                                             onclick="switchLesson(this)">-->
+
+<!--                                            <i th:if="${lesson.type == 'VIDEO'}" class="bi bi-play-circle-fill lesson-icon"></i>-->
+<!--                                            <i th:if="${lesson.type == 'ARTICLE'}" class="bi bi-file-text-fill lesson-icon"></i>-->
+<!--                                            <i th:if="${lesson.type == 'QUIZ'}" class="bi bi-question-square-fill lesson-icon"></i>-->
+
+<!--                                            <div class="lesson-info">-->
+<!--                                                <div class="lesson-title" th:text="${lesson.title}">Tên bài học</div>-->
+<!--                                                <div class="lesson-duration">-->
+<!--                                                    <span th:if="${lesson.type == 'VIDEO'}">Bài học Video</span>-->
+<!--                                                    <span th:if="${lesson.type == 'ARTICLE'}">Bài học đọc</span>-->
+<!--                                                    <span th:if="${lesson.type == 'QUIZ'}">Bài kiểm tra trắc nghiệm</span>-->
+<!--                                                </div>-->
+<!--                                            </div>-->
+<!--                                        </div>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; TAB 2: OVERVIEW &ndash;&gt;-->
+<!--                <div class="tab-pane fade" id="overview-pane" role="tabpanel" aria-labelledby="overview-tab" tabindex="0">-->
+<!--                    <div class="row">-->
+<!--                        &lt;!&ndash; Về khoá học & Giảng viên &ndash;&gt;-->
+<!--                        <div class="col-lg-8">-->
+<!--                            <h3 class="fw-bold mb-3">Về khoá học này</h3>-->
+<!--                            <p class="lead fw-semibold text-muted" th:text="${course.subtitle}">Phụ đề khoá học</p>-->
+<!--                            <div class="mt-4 fs-6 lh-lg" th:utext="${course.description}">-->
+<!--                                Mô tả chi tiết...-->
+<!--                            </div>-->
+
+<!--                            <hr class="my-5">-->
+
+<!--                            <h4 class="fw-bold mb-3">Giảng viên</h4>-->
+<!--                            <div class="instructor-card">-->
+<!--                                <div class="instructor-avatar" th:text="${#strings.substring(course.instructorName, 0, 1)}">G</div>-->
+<!--                                <div>-->
+<!--                                    <h5 class="fw-bold mb-1" th:text="${course.instructorName}">Tên giảng viên</h5>-->
+<!--                                    <p class="text-muted mb-2" th:text="${course.instructorEmail}">email@giangvien.com</p>-->
+<!--                                    <p class="small text-secondary mb-0">Giảng viên chuyên môn giàu kinh nghiệm trong việc giảng dạy phần mềm, phát triển kỹ năng và thiết lập lộ trình học tập hiệu quả.</p>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+
+<!--                        &lt;!&ndash; Card thông số khoá học bên phải &ndash;&gt;-->
+<!--                        <div class="col-lg-4 mt-4 mt-lg-0">-->
+<!--                            <div class="card shadow-sm border-0 p-4" style="border-radius: 8px;">-->
+<!--                                <img th:if="${course.thumbnailUrl != null}" th:src="${course.thumbnailUrl}"-->
+<!--                                     class="card-img-top rounded mb-3" alt="Course Thumbnail">-->
+<!--                                <div th:unless="${course.thumbnailUrl != null}"-->
+<!--                                     class="d-flex align-items-center justify-content-center bg-secondary rounded mb-3"-->
+<!--                                     style="aspect-ratio: 16/9; color: white;">-->
+<!--                                    <i class="bi bi-play-circle-fill fs-1"></i>-->
+<!--                                </div>-->
+<!--                                <h3 class="fw-bold mb-3 text-primary" th:text="${#numbers.formatInteger(course.price, 1, 'COMMA')} + ' ₫'">299.000 đ</h3>-->
+
+<!--                                <div class="d-flex align-items-center gap-2 mb-3">-->
+<!--                                    <i class="bi bi-star-fill text-warning"></i>-->
+<!--                                    <span class="fw-bold" th:text="${#numbers.formatDecimal(course.averageRating, 1, 1)}">4.5</span>-->
+<!--                                    <span class="text-secondary" th:text="'(' + ${course.totalReviews} + ' đánh giá)'">(123 đánh giá)</span>-->
+<!--                                </div>-->
+
+<!--                                <div class="d-flex align-items-center gap-2 mb-4">-->
+<!--                                    <i class="bi bi-people-fill text-muted"></i>-->
+<!--                                    <span class="text-secondary" th:text="${course.totalStudents} + ' học viên đã đăng ký'">1,200 học viên đã đăng ký</span>-->
+<!--                                </div>-->
+
+<!--                                <button class="btn btn-outline-primary w-100 py-2 fw-bold" style="border-radius: 6px;">Chia sẻ khoá học</button>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; TAB 3: COMMENTS &ndash;&gt;-->
+<!--                <div class="tab-pane fade" id="comments-pane" role="tabpanel" aria-labelledby="comments-tab" tabindex="0">-->
+<!--                    <h3 class="fw-bold mb-4">Hỏi đáp & Thảo luận</h3>-->
+
+<!--                    &lt;!&ndash; Add Comment Form &ndash;&gt;-->
+<!--                    <div class="comment-box">-->
+<!--                        <h5 class="fw-bold mb-3">Viết bình luận mới</h5>-->
+<!--                        <div id="commentError" class="alert alert-danger d-none"></div>-->
+<!--                        <div class="mb-3">-->
+<!--                            <textarea id="commentInput" class="form-control" rows="3"-->
+<!--                                      placeholder="Nhập câu hỏi hoặc cảm nghĩ của bạn về bài học này..."-->
+<!--                                      style="border-radius: 6px;"></textarea>-->
+<!--                        </div>-->
+<!--                        <button class="btn btn-primary px-4" onclick="postComment()" th:disabled="${activeLesson == null}">Gửi bình luận</button>-->
+<!--                    </div>-->
+
+<!--                    &lt;!&ndash; Comments List &ndash;&gt;-->
+<!--                    <div id="commentsList">-->
+<!--                        <div th:each="comment : ${comments}" class="comment-item">-->
+<!--                            <div class="comment-avatar" th:text="${#strings.substring(comment.userName, 0, 1)}">U</div>-->
+<!--                            <div class="comment-body">-->
+<!--                                <div class="d-flex justify-content-between align-items-start">-->
+<!--                                    <div>-->
+<!--                                        <div class="comment-author" th:text="${comment.userName}">Học viên</div>-->
+<!--                                        <div class="comment-date" th:text="${#temporals.format(comment.createdAt, 'dd/MM/yyyy HH:mm')}">Hôm nay</div>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                                <div class="comment-text" th:text="${comment.content}">Nội dung bình luận.</div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                        <div th:if="${comments.isEmpty()}" class="text-center py-5 text-muted" id="noCommentsMsg">-->
+<!--                            <i class="bi bi-chat-left-dots fs-1 mb-2 d-block"></i>-->
+<!--                            Chưa có bình luận nào cho bài học này. Hãy là người đầu tiên đặt câu hỏi!-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; TAB 4: REVIEWS &ndash;&gt;-->
+<!--                <div class="tab-pane fade" id="reviews-pane" role="tabpanel" aria-labelledby="reviews-tab" tabindex="0">-->
+<!--                    <div class="row">-->
+<!--                        &lt;!&ndash; Rating Summary Box & Review Form &ndash;&gt;-->
+<!--                        <div class="col-md-4">-->
+<!--                            <div class="review-summary-box">-->
+<!--                                <div class="review-rating-score" th:text="${#numbers.formatDecimal(course.averageRating, 1, 1)}">4.5</div>-->
+<!--                                <div class="review-stars">-->
+<!--                                    <th:block th:with="rating=${course.averageRating.intValue()}">-->
+<!--                                        <i th:each="i : ${#numbers.sequence(1, 5)}"-->
+<!--                                           th:class="${i <= rating} ? 'bi bi-star-fill' : 'bi bi-star'">-->
+<!--                                        </i>-->
+<!--                                    </th:block>-->
+<!--                                </div>-->
+<!--                                <div class="review-count fw-semibold" th:text="'Đánh giá trung bình (' + ${course.totalReviews} + ' bình chọn)'">Đánh giá trung bình (123 bình chọn)</div>-->
+<!--                            </div>-->
+
+<!--                            &lt;!&ndash; Write Review Form &ndash;&gt;-->
+<!--                            <div class="card p-4 shadow-sm border-0 mb-4" style="border-radius: 8px;">-->
+<!--                                <h5 class="fw-bold mb-3">Đánh giá của bạn</h5>-->
+<!--                                <div id="feedbackError" class="alert alert-danger d-none"></div>-->
+<!--                                <div id="feedbackSuccess" class="alert alert-success d-none">Gửi đánh giá thành công!</div>-->
+<!--                                <div class="stars-select" id="ratingStars">-->
+<!--                                    <i class="bi bi-star-fill" data-star="1" onclick="setFeedbackRating(1)"></i>-->
+<!--                                    <i class="bi bi-star-fill" data-star="2" onclick="setFeedbackRating(2)"></i>-->
+<!--                                    <i class="bi bi-star-fill" data-star="3" onclick="setFeedbackRating(3)"></i>-->
+<!--                                    <i class="bi bi-star-fill" data-star="4" onclick="setFeedbackRating(4)"></i>-->
+<!--                                    <i class="bi bi-star-fill" data-star="5" onclick="setFeedbackRating(5)"></i>-->
+<!--                                </div>-->
+<!--                                <input type="hidden" id="feedbackRatingValue" value="5">-->
+<!--                                <div class="mb-3">-->
+<!--                                    <textarea id="feedbackCommentInput" class="form-control" rows="3"-->
+<!--                                              placeholder="Chia sẻ trải nghiệm học tập của bạn về khoá học này..."-->
+<!--                                              style="border-radius: 6px;"></textarea>-->
+<!--                                </div>-->
+<!--                                <button class="btn btn-warning fw-bold text-dark px-4" onclick="postFeedback()">Gửi đánh giá</button>-->
+<!--                            </div>-->
+<!--                        </div>-->
+
+<!--                        &lt;!&ndash; Reviews List &ndash;&gt;-->
+<!--                        <div class="col-md-8">-->
+<!--                            <h4 class="fw-bold mb-4">Các đánh giá gần đây</h4>-->
+<!--                            <div id="feedbacksList">-->
+<!--                                <div th:each="f : ${feedbacks}" class="comment-item">-->
+<!--                                    <div class="comment-avatar bg-warning text-dark" th:text="${#strings.substring(f.studentName, 0, 1)}">A</div>-->
+<!--                                    <div class="comment-body">-->
+<!--                                        <div class="d-flex justify-content-between align-items-start">-->
+<!--                                            <div>-->
+<!--                                                <div class="comment-author" th:text="${f.studentName}">Tên học viên</div>-->
+<!--                                                <div class="review-stars text-warning fs-6" style="margin-bottom: 2px;">-->
+<!--                                                    <i th:each="i : ${#numbers.sequence(1, 5)}"-->
+<!--                                                       th:class="${i <= f.rating} ? 'bi bi-star-fill' : 'bi bi-star'">-->
+<!--                                                    </i>-->
+<!--                                                </div>-->
+<!--                                                <div class="comment-date" th:text="${#temporals.format(f.createdAt, 'dd/MM/yyyy HH:mm')}">Vài ngày trước</div>-->
+<!--                                            </div>-->
+<!--                                        </div>-->
+<!--                                        <div class="comment-text" th:text="${f.comment}">Nội dung đánh giá.</div>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                                <div th:if="${feedbacks.isEmpty()}" class="text-center py-5 text-muted" id="noFeedbacksMsg">-->
+<!--                                    <i class="bi bi-star-half fs-1 mb-2 d-block"></i>-->
+<!--                                    Chưa có học viên nào đánh giá khoá học này. Hãy là người đầu tiên!-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+
+<!--</div>-->
+
+<!--&lt;!&ndash; Layout scripts &ndash;&gt;-->
+<!--<th:block layout:fragment="script">-->
+<!--    <script th:inline="javascript">-->
+<!--        /* ===== DATA INLINING FROM BACKEND ===== */-->
+<!--        const courseId = /*[[${course.courseId}]]*/ 0;-->
+<!--        let activeLessonId = /*[[${activeLesson != null ? activeLesson.id : null}]]*/ null;-->
+<!--        let courseSections = /*[[${course.sections}]]*/ [];-->
+
+<!--        // Lưu giữ số sao cho Feedback Form-->
+<!--        let currentFeedbackRating = 5;-->
+<!--        setFeedbackRating(5);-->
+
+<!--        // Map lưu giữ tất cả lessons để tra cứu nhanh bằng JS-->
+<!--        const lessonsMap = {};-->
+<!--        courseSections.forEach(section => {-->
+<!--            if (section.lessons) {-->
+<!--                section.lessons.forEach(lesson => {-->
+<!--                    lessonsMap[lesson.id] = lesson;-->
+<!--                });-->
+<!--            }-->
+<!--        });-->
+
+<!--        /* ===== REVIEW / FEEDBACK SELECT RATING FORM ===== */-->
+<!--        function setFeedbackRating(stars) {-->
+<!--            currentFeedbackRating = stars;-->
+<!--            document.getElementById('feedbackRatingValue').value = stars;-->
+<!--            const starElements = document.querySelectorAll('#ratingStars i');-->
+<!--            starElements.forEach((el, index) => {-->
+<!--                if (index < stars) {-->
+<!--                    el.className = 'bi bi-star-fill active';-->
+<!--                } else {-->
+<!--                    el.className = 'bi bi-star';-->
+<!--                }-->
+<!--            });-->
+<!--        }-->
+
+<!--        /* ===== INTERACTIVE QUIZ FUNCTIONS ===== */-->
+<!--        function selectOption(element) {-->
+<!--            // Xem quiz đã submit chưa (nếu đã khoá thì ko cho chọn lại)-->
+<!--            if (element.parentElement.classList.contains('locked')) {-->
+<!--                return;-->
+<!--            }-->
+<!--            // Bỏ chọn tất cả các đáp án khác trong cùng câu hỏi-->
+<!--            const siblings = element.parentElement.querySelectorAll('.option-item');-->
+<!--            siblings.forEach(sib => {-->
+<!--                sib.classList.remove('selected');-->
+<!--                const radio = sib.querySelector('input[type="radio"]');-->
+<!--                if (radio) radio.checked = false;-->
+<!--            });-->
+
+<!--            // Chọn đáp án này-->
+<!--            element.classList.add('selected');-->
+<!--            const radio = element.querySelector('input[type="radio"]');-->
+<!--            if (radio) radio.checked = true;-->
+<!--        }-->
+
+<!--        function submitQuiz() {-->
+<!--            const quizContainer = document.getElementById('quizContainer');-->
+<!--            const questionCards = quizContainer.querySelectorAll('.question-card');-->
+<!--            let correctCount = 0;-->
+<!--            let totalQuestions = questionCards.length;-->
+
+<!--            questionCards.forEach(card => {-->
+<!--                const container = card.querySelector('.options-container');-->
+<!--                container.classList.add('locked'); // Khoá chọn lại-->
+
+<!--                const selectedOption = container.querySelector('.option-item.selected');-->
+<!--                const options = container.querySelectorAll('.option-item');-->
+
+<!--                options.forEach(opt => {-->
+<!--                    const isCorrect = opt.getAttribute('data-correct') === 'true';-->
+<!--                    if (isCorrect) {-->
+<!--                        opt.classList.add('correct');-->
+<!--                    } else if (opt.classList.contains('selected')) {-->
+<!--                        opt.classList.add('incorrect');-->
+<!--                    }-->
+<!--                });-->
+
+<!--                if (selectedOption && selectedOption.getAttribute('data-correct') === 'true') {-->
+<!--                    correctCount++;-->
+<!--                }-->
+<!--            });-->
+
+<!--            const resultDiv = document.getElementById('quizResult');-->
+<!--            resultDiv.textContent = `Bạn đã trả lời đúng ${correctCount}/${totalQuestions} câu hỏi.`;-->
+<!--            resultDiv.classList.remove('d-none');-->
+<!--        }-->
+
+<!--        /* ===== LESSON SWITCHER (AJAX POWERED) ===== */-->
+<!--        function switchLesson(element) {-->
+<!--            const lessonId = parseInt(element.getAttribute('data-lesson-id'));-->
+<!--            const lesson = lessonsMap[lessonId];-->
+<!--            if (!lesson) return;-->
+
+<!--            // Đổi active UI của danh sách bài học-->
+<!--            document.querySelectorAll('.lesson-list-item').forEach(item => {-->
+<!--                item.classList.remove('active');-->
+<!--            });-->
+<!--            element.classList.add('active');-->
+
+<!--            activeLessonId = lessonId;-->
+
+<!--            // Ẩn tất cả containers-->
+<!--            document.getElementById('videoContainer').style.display = 'none';-->
+<!--            document.getElementById('articleContainer').style.display = 'none';-->
+<!--            document.getElementById('quizContainer').style.display = 'none';-->
+<!--            document.getElementById('emptyContainer').style.display = 'none';-->
+
+<!--            // Dừng phát video cũ-->
+<!--            const video = document.getElementById('hlsPlayer');-->
+<!--            if (video) {-->
+<!--                video.pause();-->
+<!--                if (hls) {-->
+<!--                    hls.destroy();-->
+<!--                }-->
+<!--            }-->
+
+<!--            if (lesson.type === 'VIDEO') {-->
+<!--                document.getElementById('videoContainer').style.display = 'block';-->
+<!--                if (lesson.videoUrl) {-->
+<!--                    initVideoPlayer(lesson.videoUrl, lesson.subtitleUrl);-->
+<!--                }-->
+<!--            } else if (lesson.type === 'ARTICLE') {-->
+<!--                document.getElementById('articleContainer').style.display = 'block';-->
+<!--                document.getElementById('articleTitle').textContent = lesson.title;-->
+<!--                document.getElementById('articleBody').innerHTML = lesson.articleContent || 'Không có nội dung bài viết.';-->
+<!--            } else if (lesson.type === 'QUIZ') {-->
+<!--                document.getElementById('quizContainer').style.display = 'block';-->
+<!--                document.getElementById('quizTitle').textContent = 'Trắc nghiệm: ' + lesson.title;-->
+
+<!--                // Render câu hỏi trắc nghiệm động-->
+<!--                const quizContent = document.getElementById('quizContent');-->
+<!--                quizContent.innerHTML = '';-->
+
+<!--                if (lesson.questions && lesson.questions.length > 0) {-->
+<!--                    lesson.questions.forEach((q, index) => {-->
+<!--                        const card = document.createElement('div');-->
+<!--                        card.className = 'question-card';-->
+<!--                        card.setAttribute('data-question-id', q.id);-->
+
+<!--                        const h5 = document.createElement('h5');-->
+<!--                        h5.className = 'fw-bold';-->
+<!--                        h5.textContent = `Câu ${index + 1}: ${q.questionText}`;-->
+<!--                        card.appendChild(h5);-->
+
+<!--                        const optionsDiv = document.createElement('div');-->
+<!--                        optionsDiv.className = 'options-container';-->
+
+<!--                        q.answers.forEach(a => {-->
+<!--                            const opt = document.createElement('div');-->
+<!--                            opt.className = 'option-item';-->
+<!--                            opt.setAttribute('data-answer-id', a.id);-->
+<!--                            opt.setAttribute('data-correct', a.isCorrect);-->
+<!--                            opt.onclick = function () {-->
+<!--                                selectOption(this);-->
+<!--                            };-->
+
+<!--                            const radio = document.createElement('input');-->
+<!--                            radio.type = 'radio';-->
+<!--                            radio.name = `q_${q.id}`;-->
+<!--                            radio.value = a.id;-->
+<!--                            radio.style.pointerEvents = 'none';-->
+
+<!--                            const textSpan = document.createElement('span');-->
+<!--                            textSpan.textContent = a.text;-->
+
+<!--                            opt.appendChild(radio);-->
+<!--                            opt.appendChild(textSpan);-->
+<!--                            optionsDiv.appendChild(opt);-->
+<!--                        });-->
+
+<!--                        card.appendChild(optionsDiv);-->
+<!--                        quizContent.appendChild(card);-->
+<!--                    });-->
+
+<!--                    const submitBtn = document.createElement('button');-->
+<!--                    submitBtn.className = 'btn btn-success px-4 py-2 mt-2';-->
+<!--                    submitBtn.textContent = 'Nộp bài kiểm tra';-->
+<!--                    submitBtn.onclick = submitQuiz;-->
+<!--                    quizContent.appendChild(submitBtn);-->
+
+<!--                    const resultAlert = document.createElement('div');-->
+<!--                    resultAlert.id = 'quizResult';-->
+<!--                    resultAlert.className = 'mt-3 alert alert-info d-none fw-bold';-->
+<!--                    quizContent.appendChild(resultAlert);-->
+<!--                } else {-->
+<!--                    quizContent.innerHTML = '<div class="alert alert-warning">Bài học này chưa có câu hỏi trắc nghiệm nào.</div>';-->
+<!--                }-->
+<!--            } else {-->
+<!--                document.getElementById('emptyContainer').style.display = 'flex';-->
+<!--            }-->
+
+<!--            // Đồng bộ URL mà ko reload trang-->
+<!--            const newUrl = window.location.pathname + '?lessonId=' + lessonId;-->
+<!--            window.history.pushState({path: newUrl}, '', newUrl);-->
+
+<!--            // Tải bình luận cho bài học mới-->
+<!--            loadComments(lessonId);-->
+<!--        }-->
+
+<!--        /* ===== COMMENTS LOGIC (AJAX) ===== */-->
+<!--        function loadComments(lessonId) {-->
+<!--            fetch(`/api/lessons/${lessonId}/comments`)-->
+<!--                .then(res => res.json())-->
+<!--                .then(comments => {-->
+<!--                    const commentsList = document.getElementById('commentsList');-->
+<!--                    commentsList.innerHTML = '';-->
+<!--                    if (comments.length > 0) {-->
+<!--                        comments.forEach(comment => {-->
+<!--                            const dateStr = formatDate(comment.createdAt);-->
+<!--                            const initials = comment.userName ? comment.userName.substring(0, 1) : 'U';-->
+<!--                            const item = document.createElement('div');-->
+<!--                            item.className = 'comment-item';-->
+<!--                            item.innerHTML = `-->
+<!--                                <div class="comment-avatar">${initials}</div>-->
+<!--                                <div class="comment-body">-->
+<!--                                    <div class="d-flex justify-content-between align-items-start">-->
+<!--                                        <div>-->
+<!--                                            <div class="comment-author">${comment.userName}</div>-->
+<!--                                            <div class="comment-date">${dateStr}</div>-->
+<!--                                        </div>-->
+<!--                                    </div>-->
+<!--                                    <div class="comment-text">${comment.content}</div>-->
+<!--                                </div>-->
+<!--                            `;-->
+<!--                            commentsList.appendChild(item);-->
+<!--                        });-->
+<!--                    } else {-->
+<!--                        commentsList.innerHTML = `-->
+<!--                            <div class="text-center py-5 text-muted" id="noCommentsMsg">-->
+<!--                                <i class="bi bi-chat-left-dots fs-1 mb-2 d-block"></i>-->
+<!--                                Chưa có bình luận nào cho bài học này. Hãy là người đầu tiên đặt câu hỏi!-->
+<!--                            </div>-->
+<!--                        `;-->
+<!--                    }-->
+<!--                })-->
+<!--                .catch(err => console.log('Không thể tải bình luận:', err));-->
+<!--        }-->
+
+<!--        function postComment() {-->
+<!--            if (!activeLessonId) {-->
+<!--                alert('Vui lòng chọn bài học trước');-->
+<!--                return;-->
+<!--            }-->
+<!--            const errorDiv = document.getElementById('commentError');-->
+<!--            errorDiv.classList.add('d-none');-->
+<!--            const content = document.getElementById('commentInput').value;-->
+
+<!--            if (!content || content.trim() === '') {-->
+<!--                errorDiv.textContent = 'Nội dung bình luận không được để trống.';-->
+<!--                errorDiv.classList.remove('d-none');-->
+<!--                return;-->
+<!--            }-->
+
+<!--            fetch(`/api/lessons/${activeLessonId}/comments`, {-->
+<!--                method: 'POST',-->
+<!--                headers: {-->
+<!--                    'Content-Type': 'application/json'-->
+<!--                },-->
+<!--                body: JSON.stringify({content: content})-->
+<!--            })-->
+<!--                .then(res => {-->
+<!--                    if (res.status === 401) {-->
+<!--                        throw new Error('Vui lòng đăng nhập để thực hiện bình luận.');-->
+<!--                    }-->
+<!--                    if (!res.ok) {-->
+<!--                        throw new Error('Có lỗi xảy ra khi gửi bình luận.');-->
+<!--                    }-->
+<!--                    return res.json();-->
+<!--                })-->
+<!--                .then(comment => {-->
+<!--                    document.getElementById('commentInput').value = '';-->
+<!--                    const commentsList = document.getElementById('commentsList');-->
+<!--                    const noCommentsMsg = document.getElementById('noCommentsMsg');-->
+<!--                    if (noCommentsMsg) noCommentsMsg.remove();-->
+
+<!--                    const dateStr = formatDate(comment.createdAt);-->
+<!--                    const initials = comment.userName ? comment.userName.substring(0, 1) : 'U';-->
+<!--                    const item = document.createElement('div');-->
+<!--                    item.className = 'comment-item';-->
+<!--                    item.innerHTML = `-->
+<!--                        <div class="comment-avatar">${initials}</div>-->
+<!--                        <div class="comment-body">-->
+<!--                            <div class="d-flex justify-content-between align-items-start">-->
+<!--                                <div>-->
+<!--                                    <div class="comment-author">${comment.userName}</div>-->
+<!--                                    <div class="comment-date">${dateStr}</div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                            <div class="comment-text">${comment.content}</div>-->
+<!--                        </div>-->
+<!--                    `;-->
+<!--                    commentsList.insertBefore(item, commentsList.firstChild);-->
+<!--                })-->
+<!--                .catch(err => {-->
+<!--                    errorDiv.textContent = err.message;-->
+<!--                    errorDiv.classList.remove('d-none');-->
+<!--                });-->
+<!--        }-->
+
+<!--        /* ===== FEEDBACKS LOGIC (AJAX) ===== */-->
+<!--        function postFeedback() {-->
+<!--            const errorDiv = document.getElementById('feedbackError');-->
+<!--            const successDiv = document.getElementById('feedbackSuccess');-->
+<!--            errorDiv.classList.add('d-none');-->
+<!--            successDiv.classList.add('d-none');-->
+
+<!--            const rating = currentFeedbackRating;-->
+<!--            const comment = document.getElementById('feedbackCommentInput').value;-->
+
+<!--            fetch(`/api/courses/${courseId}/feedbacks`, {-->
+<!--                method: 'POST',-->
+<!--                headers: {-->
+<!--                    'Content-Type': 'application/json'-->
+<!--                },-->
+<!--                body: JSON.stringify({-->
+<!--                    rating: rating,-->
+<!--                    comment: comment-->
+<!--                })-->
+<!--            })-->
+<!--                .then(res => {-->
+<!--                    if (res.status === 401) {-->
+<!--                        throw new Error('Vui lòng đăng nhập để đánh giá.');-->
+<!--                    }-->
+<!--                    if (!res.ok) {-->
+<!--                        throw new Error('Có lỗi xảy ra khi gửi đánh giá.');-->
+<!--                    }-->
+<!--                    return res.json();-->
+<!--                })-->
+<!--                .then(feedback => {-->
+<!--                    document.getElementById('feedbackCommentInput').value = '';-->
+<!--                    successDiv.classList.remove('d-none');-->
+<!--                    loadFeedbacks();-->
+<!--                })-->
+<!--                .catch(err => {-->
+<!--                    errorDiv.textContent = err.message;-->
+<!--                    errorDiv.classList.remove('d-none');-->
+<!--                });-->
+<!--        }-->
+
+<!--        function loadFeedbacks() {-->
+<!--            fetch(`/api/courses/${courseId}/feedbacks`)-->
+<!--                .then(res => res.json())-->
+<!--                .then(feedbacks => {-->
+<!--                    const feedbacksList = document.getElementById('feedbacksList');-->
+<!--                    feedbacksList.innerHTML = '';-->
+<!--                    if (feedbacks.length > 0) {-->
+<!--                        feedbacks.forEach(f => {-->
+<!--                            const dateStr = formatDate(f.createdAt);-->
+<!--                            const initials = f.studentName ? f.studentName.substring(0, 1) : 'A';-->
+<!--                            const item = document.createElement('div');-->
+<!--                            item.className = 'comment-item';-->
+
+<!--                            let starsHtml = '';-->
+<!--                            for (let i = 1; i <= 5; i++) {-->
+<!--                                starsHtml += `<i class="${i <= f.rating ? 'bi bi-star-fill' : 'bi bi-star'}"></i> `;-->
+<!--                            }-->
+
+<!--                            item.innerHTML = `-->
+<!--                                <div class="comment-avatar bg-warning text-dark">${initials}</div>-->
+<!--                                <div class="comment-body">-->
+<!--                                    <div class="d-flex justify-content-between align-items-start">-->
+<!--                                        <div>-->
+<!--                                            <div class="comment-author">${f.studentName}</div>-->
+<!--                                            <div class="review-stars text-warning fs-6" style="margin-bottom: 2px;">-->
+<!--                                                ${starsHtml}-->
+<!--                                            </div>-->
+<!--                                            <div class="comment-date">${dateStr}</div>-->
+<!--                                        </div>-->
+<!--                                    </div>-->
+<!--                                    <div class="comment-text">${f.comment}</div>-->
+<!--                                </div>-->
+<!--                            `;-->
+<!--                            feedbacksList.appendChild(item);-->
+<!--                        });-->
+<!--                    } else {-->
+<!--                        feedbacksList.innerHTML = `-->
+<!--                            <div class="text-center py-5 text-muted" id="noFeedbacksMsg">-->
+<!--                                <i class="bi bi-star-half fs-1 mb-2 d-block"></i>-->
+<!--                                Chưa có học viên nào đánh giá khoá học này. Hãy là người đầu tiên!-->
+<!--                            </div>-->
+<!--                        `;-->
+<!--                    }-->
+<!--                })-->
+<!--                .catch(err => console.log('Không thể tải đánh giá:', err));-->
+<!--        }-->
+
+<!--        /* ===== UTILS & ONLOAD INITIALIZATION ===== */-->
+<!--        function formatDate(dateString) {-->
+<!--            if (!dateString) return 'Vừa xong';-->
+<!--            try {-->
+<!--                const date = new Date(dateString);-->
+<!--                const day = String(date.getDate()).padStart(2, '0');-->
+<!--                const month = String(date.getMonth() + 1).padStart(2, '0');-->
+<!--                const year = date.getFullYear();-->
+<!--                const hours = String(date.getHours()).padStart(2, '0');-->
+<!--                const minutes = String(date.getMinutes()).padStart(2, '0');-->
+<!--                return `${day}/${month}/${year} ${hours}:${minutes}`;-->
+<!--            } catch (e) {-->
+<!--                return dateString;-->
+<!--            }-->
+<!--        }-->
+
+<!--        // Tự động khởi chạy video player lần đầu nếu bài học đang active là video-->
+<!--        document.addEventListener('DOMContentLoaded', () => {-->
+<!--            const activeLesson = /*[[${activeLesson}]]*/ null;-->
+<!--            if (activeLesson && activeLesson.type === 'VIDEO' && activeLesson.videoUrl) {-->
+<!--                initVideoPlayer(activeLesson.videoUrl, activeLesson.subtitleUrl);-->
+<!--            }-->
+<!--        });-->
+<!--    </script>-->
+<!--</th:block>-->
+
+<!--</body>-->
+<!--</html>-->
+
+<!DOCTYPE html>
+<html
+        lang="vi"
+        xmlns:th="http://www.thymeleaf.org"
+        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+        layout:decorate="~{layouts/main-layout}"
+>
+
+<head>
+    <title>Chi tiết khoá học</title>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- HLS.js -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+    <style>
+        :root {
+            --sidebar-width: 320px;
+            --player-bg: #0d0d0d;
+            --accent: #a855f7;
+            --accent-light: #c084fc;
+        }
+
+        /* ── layout ── */
+        .course-wrapper {
+            display: flex;
+            min-height: 100vh;
+            height: fit-content;
+            overflow: hidden;
+        }
+
+        /* ── main (left) ── */
+        .course-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* top half – lesson viewer */
+        .lesson-viewer {
+            height: 600px;
+            flex: none;
+            background: var(--player-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* video player */
+        #videoPlayer {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        /* article pane */
+        #articlePane {
+            display: none;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            padding: 2rem;
+            background: #fff;
+            color: #1a1a2e;
+        }
+
+        /* quiz pane */
+        #quizPane {
+            display: none;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            padding: 2rem;
+            background: #fff;
+        }
+
+        .placeholder-lesson {
+            text-align: center;
+            color: #6c757d;
+        }
+        .placeholder-lesson i { font-size: 4rem; }
+
+        /* bottom half – tabs */
+        .course-tabs {
+            flex: 0 0 50%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .course-tabs .nav-tabs { flex-shrink: 0; border-bottom: 2px solid #e9ecef; }
+        .course-tabs .tab-content { flex: 1; overflow-y: auto; }
+
+        .lesson-item {
+            cursor: pointer;
+            padding: .6rem 1rem .6rem 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background .15s;
+            font-size: .85rem;
+        }
+        .lesson-item:hover { background: #ede9fe; }
+        .lesson-item.active { background: #ede9fe; border-left: 3px solid var(--accent); color: var(--accent); }
+
+        .lesson-icon { width: 20px; text-align: center; }
+
+        /* ── quiz styles ── */
+        .quiz-question-card { border-left: 4px solid var(--accent); }
+
+        .answer-option input[type="radio"],
+        .answer-option input[type="checkbox"] { display: none; }
+
+        .answer-option label {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .5rem .75rem;
+            border: 1.5px solid #dee2e6;
+            border-radius: .5rem;
+            cursor: pointer;
+            transition: all .15s;
+            font-size: .9rem;
+        }
+        .answer-option label:hover { border-color: var(--accent); background: #fdf4ff; }
+        .answer-option input:checked + label { border-color: var(--accent); background: #ede9fe; color: var(--accent); font-weight: 500; }
+
+        .answer-option label.correct { border-color: #198754 !important; background: #d1e7dd !important; color: #155724 !important; }
+        .answer-option label.wrong   { border-color: #dc3545 !important; background: #f8d7da !important; color: #721c24 !important; }
+
+        /* ── star rating ── */
+        .star-rating .bi-star-fill { color: #f59e0b; }
+        .star-rating .bi-star      { color: #d1d5db; }
+
+        /* ── comment avatar ── */
+        .comment-avatar {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* scrollbar thin */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 3px; }
+
+        @media (max-width: 768px) {
+            .course-wrapper { flex-direction: column; height: auto; }
+            .lesson-viewer  { min-height: 220px; }
+        }
+    </style>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div class="course-wrapper">
+        <!-- ═══════════════ MAIN AREA ═══════════════ -->
+        <div class="course-main">
+            <!-- ───── TOP HALF: Lesson Viewer ───── -->
+            <div class="lesson-viewer" id="lessonViewer">
+
+                <!-- Video player (HLS) -->
+                <video id="videoPlayer" controls></video>
+
+                <!-- Article pane -->
+                <div id="articlePane"></div>
+
+                <!-- Quiz pane -->
+                <div id="quizPane"></div>
+
+                <!-- Placeholder khi chưa chọn bài -->
+                <div id="placeholderLesson" class="placeholder-lesson">
+                    <i class="bi bi-play-circle text-secondary"></i>
+                    <p class="mt-3 text-secondary fs-6">Chọn một bài học để bắt đầu</p>
+                </div>
+            </div>
+
+            <!-- ───── BOTTOM HALF: Tabs ───── -->
+            <div class="course-tabs">
+                <ul class="nav nav-tabs px-3 pt-2" id="courseTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabContent" type="button">
+                            <i class="bi bi-list-ul me-1"></i>Nội dung
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabOverview" type="button">
+                            <i class="bi bi-info-circle me-1"></i>Tổng quan
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabComments" type="button">
+                            <i class="bi bi-chat-dots me-1"></i>Bình luận
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabReviews" type="button">
+                            <i class="bi bi-star me-1"></i>Đánh giá
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content p-3">
+
+                    <!-- ── Tab: Nội dung khoá học ── -->
+                    <div class="tab-pane fade show active" id="tabContent">
+                        <div class="accordion accordion-flush" id="courseAccordion"
+                             th:with="course=${course}">
+
+                            <div class="accordion-item mb-2 border rounded"
+                                 th:each="section, sIdx : ${course.sections}">
+
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button fw-semibold"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            th:data-bs-target="'#section-' + ${section.id}"
+                                            th:aria-expanded="${sIdx.index == 0}"
+                                            th:classappend="${sIdx.index != 0} ? 'collapsed'">
+                                        <span class="me-2 text-secondary small"
+                                              th:text="${section.displayOrder} + '.'"></span>
+                                        <span th:text="${section.title}"></span>
+                                        <span class="ms-auto badge bg-light text-dark border small"
+                                              th:text="${#lists.size(section.lessons)} + ' bài'"></span>
+                                    </button>
+                                </h2>
+
+                                <div th:id="'section-' + ${section.id}"
+                                     th:classappend="${sIdx.index == 0} ? 'show' : ''"
+                                     class="accordion-collapse collapse"
+                                     data-bs-parent="#courseAccordion">
+                                    <div class="accordion-body p-0">
+
+                                        <div class="lesson-item d-flex align-items-center gap-2"
+                                             th:each="lesson : ${section.lessons}"
+                                             th:data-lesson-id="${lesson.id}"
+                                             th:data-type="${lesson.type}"
+                                             th:data-video-url="${lesson.videoUrl}"
+                                             th:data-subtitle-url="${lesson.subtitleUrl}"
+                                             th:data-article="${lesson.articleContent}"
+                                             th:data-questions="${lesson.questions != null ? #strings.escapeXml(#strings.toString(lesson.questions)) : ''}"
+                                             th:attr="data-questions-json=${lesson.questions != null} ? ${#strings.toString(lesson.questions)}"
+                                             onclick="selectLesson(this)">
+
+                                            <span class="lesson-icon">
+                                                <i th:classappend="${lesson.type == 'VIDEO'} ? 'bi-play-circle text-primary' : (${lesson.type == 'ARTICLE'} ? 'bi-file-text text-success' : 'bi-patch-question text-warning')"
+                                                   class="bi"></i>
+                                            </span>
+                                            <span th:text="${lesson.displayOrder} + '. ' + ${lesson.title}"></span>
+                                            <span class="ms-auto badge text-bg-light"
+                                                  th:text="${lesson.type}"></span>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ── Tab: Tổng quan khoá học ── -->
+                    <div class="tab-pane fade" id="tabOverview">
+                        <div th:with="course=${course}">
+                            <div class="d-flex align-items-center gap-3 mb-4">
+                                <img th:src="${course.thumbnailUrl}"
+                                     th:onerror="this.src='https://via.placeholder.com/120x80?text=No+Image'"
+                                     class="rounded" style="width:120px;height:80px;object-fit:cover;" alt="thumbnail">
+                                <div>
+                                    <h5 class="mb-1 fw-bold" th:text="${course.title}"></h5>
+                                    <p class="text-muted small mb-1" th:text="${course.subtitle}"></p>
+                                    <div class="d-flex gap-3 small">
+                                        <span><i class="bi bi-people-fill text-primary"></i>
+                                            <span th:text="${course.totalStudents}"></span> học viên</span>
+                                        <span><i class="bi bi-star-fill text-warning"></i>
+                                            <span th:text="${course.averageRating}"></span>
+                                            (<span th:text="${course.totalReviews}"></span> đánh giá)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6 class="fw-semibold">Mô tả khoá học</h6>
+                            <p class="text-secondary" th:text="${course.description}"></p>
+
+                            <hr>
+                            <h6 class="fw-semibold">Giảng viên</h6>
+                            <div class="d-flex align-items-center gap-3">
+                                <img th:if="${course.instructorAvatarUrl != null}"
+                                     th:src="${course.instructorAvatarUrl}"
+                                     class="rounded-circle" width="48" height="48" alt="avatar">
+                                <div class="comment-avatar" th:if="${course.instructorAvatarUrl == null}"
+                                     th:text="${#strings.toUpperCase(#strings.substring(course.instructorName,0,1))}"></div>
+                                <div>
+                                    <div class="fw-semibold" th:text="${course.instructorName}"></div>
+                                    <div class="text-muted small" th:text="${course.instructorEmail}"></div>
+                                </div>
+                            </div>
+
+                            <hr>
+                            <h6 class="fw-semibold">Học phí</h6>
+                            <p class="fs-5 fw-bold text-purple"
+                               style="color: var(--accent);"
+                               th:text="${#numbers.formatDecimal(course.price,0,'COMMA',0,'POINT')} + ' ₫'"></p>
+                        </div>
+                    </div>
+
+                    <!-- ── Tab: Bình luận ── -->
+                    <div class="tab-pane fade" id="tabComments">
+
+                        <!-- Form gửi bình luận -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold small">Viết bình luận</label>
+                            <textarea class="form-control form-control-sm mb-2"
+                                      id="commentInput" rows="2"
+                                      placeholder="Nhập bình luận của bạn…"></textarea>
+                            <button class="btn btn-sm btn-primary" onclick="submitComment()">
+                                <i class="bi bi-send me-1"></i>Gửi
+                            </button>
+                        </div>
+
+                        <div id="commentList">
+                            <!-- Bình luận mẫu -->
+                            <div class="d-flex gap-3 mb-3">
+                                <div class="comment-avatar">N</div>
+                                <div>
+                                    <div class="fw-semibold small">Nguyễn Văn A</div>
+                                    <p class="mb-0 text-secondary small">Khoá học rất hay, giảng viên giảng dễ hiểu!</p>
+                                    <span class="text-muted" style="font-size:.75rem;">2 giờ trước</span>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-3 mb-3">
+                                <div class="comment-avatar" style="background:#10b981;">T</div>
+                                <div>
+                                    <div class="fw-semibold small">Trần Thị B</div>
+                                    <p class="mb-0 text-secondary small">Nội dung bài tập rất thực tế.</p>
+                                    <span class="text-muted" style="font-size:.75rem;">1 ngày trước</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Tab: Đánh giá ── -->
+                    <div class="tab-pane fade" id="tabReviews">
+
+                        <!-- Tổng quan đánh giá -->
+                        <div class="d-flex align-items-center gap-4 mb-4 p-3 bg-light rounded">
+                            <div class="text-center">
+                                <div class="display-4 fw-bold text-warning"
+                                     th:text="${course.averageRating}">0.0</div>
+                                <div class="star-rating">
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star"></i>
+                                </div>
+                                <small class="text-muted"
+                                       th:text="${course.totalReviews} + ' đánh giá'">0 đánh giá</small>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div th:each="star : ${#numbers.sequence(5,1,-1)}"
+                                     class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="small text-nowrap" th:text="${star} + ' ★'"></span>
+                                    <div class="progress flex-grow-1" style="height:8px;">
+                                        <div class="progress-bar bg-warning" style="width: 0%"></div>
+                                    </div>
+                                    <span class="small text-muted">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form gửi đánh giá -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold small">Đánh giá của bạn</label>
+                            <div class="d-flex gap-1 mb-2" id="starPicker">
+                                <i class="bi bi-star-fill text-warning fs-4" style="cursor:pointer;"
+                                   th:each="i : ${#numbers.sequence(1,5)}"
+                                   th:attr="data-val=${i}"></i>
+                            </div>
+                            <textarea class="form-control form-control-sm mb-2" rows="2"
+                                      placeholder="Chia sẻ cảm nhận của bạn…"></textarea>
+                            <button class="btn btn-sm btn-warning text-white">
+                                <i class="bi bi-send me-1"></i>Gửi đánh giá
+                            </button>
+                        </div>
+
+                        <p class="text-muted small">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!-- ═══════════════ END MAIN ═══════════════ -->
+    </div>
+
+
+    <!-- ══════════ QUIZ DATA (hidden, read by JS) ══════════
+         Thymeleaf serializes toàn bộ questions dưới dạng JSON
+         vào data attribute của từng lesson-item.
+         Đây là cách an toàn nhất với Spring + Thymeleaf.
+    -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+
+        // ─── HLS Player ────────────────────────────────────────
+        let hls = null;
+
+        function loadHLS(src, subtitleSrc) {
+            const video = document.getElementById('videoPlayer');
+
+            video.querySelectorAll('track').forEach(t => t.remove());
+
+            // ✅ Bắt buộc phải có để browser gửi Origin header khi fetch track
+            video.crossOrigin = 'anonymous';
+
+            if (hls) { hls.destroy(); hls = null; }
+
+            if (subtitleSrc) {
+                const track = document.createElement('track');
+                track.kind = 'subtitles';
+                track.label = 'Phụ đề';
+                track.srclang = 'vi';
+                track.src = subtitleSrc;
+                track.default = true;
+                video.appendChild(track);
+            }
+
+            if (Hls.isSupported()) {
+                hls = new Hls();
+                hls.loadSource(src);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play().catch(() => {});
+                    setTimeout(() => {
+                        if (video.textTracks.length > 0) {
+                            video.textTracks[0].mode = 'showing';
+                        }
+                    }, 300);
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = src;
+                video.play().catch(() => {});
+            }
+        }
+
+        // ─── Lesson selector ───────────────────────────────────
+        function selectLesson(el) {
+            // highlight active
+            document.querySelectorAll('.lesson-item').forEach(i => i.classList.remove('active'));
+            document.querySelectorAll(`[data-lesson-id="${el.dataset.lessonId}"]`)
+                .forEach(i => i.classList.add('active'));
+
+            const type       = el.dataset.type;
+            const videoUrl   = el.dataset.videoUrl;
+            const subtitleUrl = el.dataset.subtitleUrl;
+            const article    = el.dataset.article;
+
+            const videoEl       = document.getElementById('videoPlayer');
+            const articleEl     = document.getElementById('articlePane');
+            const quizEl        = document.getElementById('quizPane');
+            const placeholderEl = document.getElementById('placeholderLesson');
+
+            // hide all
+            videoEl.style.display       = 'none';
+            articleEl.style.display     = 'none';
+            quizEl.style.display        = 'none';
+            placeholderEl.style.display = 'none';
+
+            if (type === 'VIDEO') {
+                videoEl.style.display = 'block';
+                loadHLS(videoUrl, subtitleUrl || null);
+            } else if (type === 'ARTICLE') {
+                articleEl.style.display = 'block';
+                articleEl.innerHTML = article || '<p class="text-muted">Không có nội dung.</p>';
+            } else if (type === 'QUIZ') {
+                quizEl.style.display = 'block';
+                renderQuiz(el.dataset.lessonId, quizEl);
+            }
+        }
+
+        // ─── Quiz renderer ─────────────────────────────────────
+        // Thymeleaf injects the full sections JSON so we can look up questions
+        const courseData = /*[[${course}]]*/ {};
+
+        function renderQuiz(lessonId, container) {
+            // Find lesson in courseData
+            let questions = [];
+            if (courseData && courseData.sections) {
+                outer:
+                    for (const sec of courseData.sections) {
+                        for (const les of sec.lessons) {
+                            if (String(les.id) === String(lessonId)) {
+                                questions = les.questions || [];
+                                break outer;
+                            }
+                        }
+                    }
+            }
+
+            if (!questions.length) {
+                container.innerHTML = '<p class="text-muted">Không có câu hỏi nào.</p>';
+                return;
+            }
+
+            let html = `<h6 class="fw-bold mb-3"><i class="bi bi-patch-question-fill text-warning me-2"></i>Bài kiểm tra</h6>`;
+            questions.forEach((q, qi) => {
+                const multi = q.answers.filter(a => a.correct).length > 1;
+                html += `
+            <div class="card quiz-question-card mb-3 p-3">
+                <p class="fw-semibold mb-2">${qi + 1}. ${q.questionText}</p>
+                ${multi ? '<small class="text-muted mb-2 d-block">Chọn tất cả đáp án đúng</small>' : ''}
+                <div class="d-flex flex-column gap-2">
+                    ${q.answers.map((a, ai) => `
+                    <div class="answer-option">
+                        <input type="${multi ? 'checkbox' : 'radio'}"
+                               name="q${q.id}"
+                               id="q${q.id}_a${a.id}"
+                               value="${a.id}"
+                               data-correct="${a.correct}">
+                        <label for="q${q.id}_a${a.id}">
+                            <span class="badge bg-light text-dark border">${String.fromCharCode(65+ai)}</span>
+                            ${a.text}
+                        </label>
+                    </div>`).join('')}
+                </div>
+                <button class="btn btn-sm btn-outline-primary mt-3 align-self-start"
+                        onclick="checkAnswer(this, ${q.id})">
+                    <i class="bi bi-check2-circle me-1"></i>Kiểm tra
+                </button>
+                <div class="quiz-result mt-2" id="result-${q.id}"></div>
+            </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function checkAnswer(btn, questionId) {
+            const inputs = btn.closest('.card').querySelectorAll('input');
+            const resultEl = document.getElementById('result-' + questionId);
+            let allCorrect = true;
+            let anySelected = false;
+
+            inputs.forEach(inp => {
+                const lbl = document.querySelector(`label[for="${inp.id}"]`);
+                lbl.classList.remove('correct', 'wrong');
+                if (inp.checked) {
+                    anySelected = true;
+                    if (inp.dataset.correct === 'true') { lbl.classList.add('correct'); }
+                    else { lbl.classList.add('wrong'); allCorrect = false; }
+                } else {
+                    if (inp.dataset.correct === 'true') allCorrect = false;
+                }
+            });
+
+            if (!anySelected) {
+                resultEl.innerHTML = '<small class="text-muted">Vui lòng chọn ít nhất một đáp án.</small>';
+                return;
+            }
+
+            resultEl.innerHTML = allCorrect
+                ? '<small class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Chính xác!</small>'
+                : '<small class="text-danger fw-semibold"><i class="bi bi-x-circle-fill me-1"></i>Chưa đúng, thử lại nhé!</small>';
+        }
+
+        // ─── Comment submit ────────────────────────────────────
+        function submitComment() {
+            const input = document.getElementById('commentInput');
+            const text  = input.value.trim();
+            if (!text) return;
+
+            const div = document.createElement('div');
+            div.className = 'd-flex gap-3 mb-3';
+            div.innerHTML = `
+            <div class="comment-avatar" style="background:#6366f1;">B</div>
+            <div>
+                <div class="fw-semibold small">Bạn</div>
+                <p class="mb-0 text-secondary small">${escapeHtml(text)}</p>
+                <span class="text-muted" style="font-size:.75rem;">Vừa xong</span>
+            </div>`;
+            document.getElementById('commentList').prepend(div);
+            input.value = '';
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        /*]]>*/
+    </script>
+
+</div>
+</body>
+</html>
