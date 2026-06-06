@@ -4,7 +4,8 @@ import com.hsf302.final_project.dto.request.CourseOverviewForm;
 import com.hsf302.final_project.dto.request.LessonRequest;
 import com.hsf302.final_project.dto.request.SectionRequest;
 import com.hsf302.final_project.dto.request.VideoLessonRequest;
-import com.hsf302.final_project.dto.response.SectionResponse;
+import com.hsf302.final_project.dto.response.*;
+import com.hsf302.final_project.security.CustomUserDetails;
 import com.hsf302.final_project.service.CourseService;
 import groovy.util.logging.Slf4j;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -209,5 +211,106 @@ public class CourseController {
                 "message", "Khoá học đã được xuất bản",
                 "redirectUrl", "/"
         );
+    }
+
+    @GetMapping("/course/{courseId}")
+    public String courseDetailPage(
+            @PathVariable Long courseId,
+            @RequestParam(required = false) Long lessonId,
+            Model model,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        CourseDetailResponse courseDetail = courseService.getCourseDetail(courseId);
+        logger.info("hihihihihihhi: {}",courseDetail.toString());
+        model.addAttribute("course", courseDetail);
+
+        LessonResponse activeLesson = null;
+        if (lessonId != null) {
+            for (SectionResponse s : courseDetail.getSections()) {
+                for (LessonResponse l : s.getLessons()) {
+                    if (l.getId().equals(lessonId)) {
+                        activeLesson = l;
+                        break;
+                    }
+                }
+                if (activeLesson != null) break;
+            }
+        }
+        if (activeLesson == null && !courseDetail.getSections().isEmpty()) {
+            for (SectionResponse s : courseDetail.getSections()) {
+                if (!s.getLessons().isEmpty()) {
+                    activeLesson = s.getLessons().get(0);
+                    break;
+                }
+            }
+        }
+
+        model.addAttribute("activeLesson", activeLesson);
+
+        List<CommentResponse> comments = new ArrayList<>();
+        if (activeLesson != null) {
+            comments = courseService.getCommentsByLessonId(activeLesson.getId());
+        }
+        model.addAttribute("comments", comments);
+
+        List<FeedbackResponse> feedbacks = courseService.getFeedbackByCourseId(courseId);
+        model.addAttribute("feedbacks", feedbacks);
+
+        String username = (userDetails != null) ? userDetails.getUsername() : "Khách";
+        model.addAttribute("username", username);
+
+        model.addAttribute("pageTitle", courseDetail.getTitle() + " - My Learning Path");
+
+        return "pages/course-detail";
+    }
+
+    @GetMapping("/api/lessons/{lessonId}/comments")
+    @ResponseBody
+    public ResponseEntity<List<CommentResponse>> getLessonComments(@PathVariable Long lessonId) {
+        return ResponseEntity.ok(courseService.getCommentsByLessonId(lessonId));
+    }
+
+    @PostMapping("/api/lessons/{lessonId}/comments")
+    @ResponseBody
+    public ResponseEntity<?> addLessonComment(
+            @PathVariable Long lessonId,
+            @RequestBody Map<String, String> payload,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Vui lòng đăng nhập"));
+        }
+        String content = payload.get("content");
+        if (content == null || content.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Nội dung bình luận không được để trống"));
+        }
+        CommentResponse comment = courseService.addComment(lessonId, content, userDetails.getUser());
+        return ResponseEntity.ok(comment);
+    }
+
+    @GetMapping("/api/courses/{courseId}/feedbacks")
+    @ResponseBody
+    public ResponseEntity<List<FeedbackResponse>> getCourseFeedbacks(@PathVariable Long courseId) {
+        return ResponseEntity.ok(courseService.getFeedbackByCourseId(courseId));
+    }
+
+    @PostMapping("/api/courses/{courseId}/feedbacks")
+    @ResponseBody
+    public ResponseEntity<?> addCourseFeedback(
+            @PathVariable Long courseId,
+            @RequestBody Map<String, Object> payload,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "Vui lòng đăng nhập"));
+        }
+        Object ratingObj = payload.get("rating");
+        String comment = (String) payload.get("comment");
+        if (ratingObj == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Vui lòng chọn số sao đánh giá"));
+        }
+        Integer rating = Integer.parseInt(ratingObj.toString());
+        FeedbackResponse feedback = courseService.addFeedback(courseId, rating, comment, userDetails.getUser());
+        return ResponseEntity.ok(feedback);
     }
 }
