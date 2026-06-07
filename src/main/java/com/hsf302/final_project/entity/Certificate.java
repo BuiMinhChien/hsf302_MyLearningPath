@@ -33,7 +33,7 @@ public class Certificate extends BaseEntity {
     @JoinColumn(name = "enrollment_id", nullable = false)
     Enrollment enrollment;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "file_id")
     AppFile file;
 

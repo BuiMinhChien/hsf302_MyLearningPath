@@ -14,7 +14,5 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     // Spring tự hiểu: tìm Course mà deleteFlag = false
     // và currentPublishedVersion.status = status
     // sắp xếp theo createdAt giảm dần
-    List<Course> findByDeleteFlagFalseAndCurrentPublishedVersion_StatusOrderByCreatedAtDesc(
-            ECourseStatus status
-    );
+    List<Course> findByDeleteFlagFalseAndCurrentPublishedVersion_StatusOrderByCreatedAtDesc(ECourseStatus status);
 }

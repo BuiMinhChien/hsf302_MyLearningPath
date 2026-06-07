@@ -35,11 +35,9 @@ public class S3TestController {
         try {
             // Gọi hàm S3Service để đẩy file lên mạng
             String url = s3Service.uploadFile(file);
-
             // Gửi link trả về cho màn hình HTML
             model.addAttribute("fileUrl", url);
             model.addAttribute("success", "Upload thành công!");
-
         } catch (Exception e) {
             e.printStackTrace();
             model.addAttribute("error", "Lỗi upload: " + e.getMessage());

@@ -5,6 +5,8 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+
 @Entity
 @Table(name = "quiz_questions")
 @NoArgsConstructor
@@ -29,4 +31,7 @@ public class QuizQuestion extends BaseEntity {
 
     @Column(name = "display_order")
     Integer displayOrder;
+
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<QuizAnswer> answers;
 }

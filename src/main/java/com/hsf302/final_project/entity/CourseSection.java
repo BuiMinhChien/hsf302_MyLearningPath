@@ -5,6 +5,8 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+
 @Entity
 @Table(name = "course_sections")
 @NoArgsConstructor
@@ -30,4 +32,7 @@ public class CourseSection extends BaseEntity {
 
     @Column(name = "display_order")
     Integer displayOrder;
+
+    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Lesson> lessons;
 }

@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html
+        lang="vi"
+        xmlns:th="http://www.thymeleaf.org"
+        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+        layout:decorate="~{layouts/main-layout}"
+>
+<head>
+    <title>Tạo khoá học</title>
+    <link rel="stylesheet" th:href="@{/css/create-course.css}">
+    <style>
+        /* ── Upload zone ── */
+        .upload-zone {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+            position: relative;
+        }
+        .upload-zone:hover {
+            border-color: #6c757d;
+            background: #f8f9fa;
+        }
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+        .upload-zone.has-file {
+            border-style: solid;
+            border-color: #198754;
+            background: #f0fff4;
+        }
+        /* ── Thumbnail preview ── */
+        #thumbnail-preview {
+            display: none;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            max-width: 360px;
+            margin-bottom: .75rem;
+        }
+        #thumbnail-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #thumbnail-preview .remove-thumb {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+        }
+        /* ── Tags ── */
+        .tag-input {
+            border: none;
+            outline: none;
+            font-size: .875rem;
+            min-width: 120px;
+            background: transparent;
+        }
+        /* ── Type panel ── */
+        .type-panel {
+            display: none;
+        }
+        .type-panel.active {
+            display: block;
+        }
+        /* ── Editor ── */
+        .editor-area {
+            min-height: 120px;
+            font-size: .875rem;
+            outline: none;
+        }
+        /* ── Section / Lesson state ── */
+        .section-accordion[data-saved="true"] .section-saved-badge {
+            display: inline-flex !important;
+        }
+        .lesson-accordion[data-saved="true"] .lesson-saved-badge {
+            display: inline-flex !important;
+        }
+        /* ── Spinner helper ── */
+        .btn-loading .spinner-border {
+            display: inline-block !important;
+        }
+        .btn-loading .btn-text {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+<div layout:fragment="content">
+
+    <!-- ═══════════════════════════ TOPBAR ═══════════════════════════ -->
+    <nav class="topbar d-flex align-items-center justify-content-between px-4 shadow">
+        <a href="#"
+           class="text-decoration-none text-white fw-bold">
+
+            Quay lại trang chủ
+        </a>
+        <div class="d-flex gap-2">
+            <!-- DELETE -->
+            <button class="btn btn-danger btn-sm"
+                    type="button"
+                    onclick="deleteCourse()">
+                <i class="bi bi-trash me-1"></i>
+                Xoá khoá học
+            </button>
+            <!-- PUBLISH -->
+            <button class="btn btn-success btn-sm"
+                    type="button"
+                    onclick="publishCourse()">
+                Xuất bản
+                <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════ MAIN ═══════════════════════════ -->
+    <main class="container py-4">
+        <form id="courseForm"
+              th:action="@{/create-course/course-overview}"
+              method="post"
+              enctype="multipart/form-data">
+            <!--
+                courseId lưu id trả về từ server sau khi tạo course overview.
+                Dùng th:value nếu đang ở chế độ edit, để trống khi tạo mới.
+            -->
+            <input type="hidden" id="courseId" name="courseId" th:value="${courseForm?.courseId}"/>
+            <input type="hidden" id="courseVersionId" name="courseVersionId" th:value="${courseForm?.courseVersionId}"/>
+
+            <!-- ───────────────── THÔNG TIN KHOÁ HỌC ───────────────── -->
+            <div class="mb-2">
+                <h2 class="fw-bold mb-1">Thông tin khoá học</h2>
+                <p class="text-muted mb-0">Mô tả tổng quan và cài đặt cơ bản của khoá học</p>
+            </div>
+
+            <!-- Basic info -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tiêu đề khoá học</label>
+                        <input type="text" id="title" class="form-control" name="title"
+                               th:value="${courseForm?.title}"
+                               placeholder="Ví dụ: Lập trình Java từ cơ bản đến nâng cao"
+                               maxlength="120"/>
+                        <div class="form-text">Tối đa 120 ký tự</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Phụ đề</label>
+                        <input type="text" id="subtitle" class="form-control" name="subtitle"
+                               th:value="${courseForm?.subtitle}"
+                               placeholder="Mô tả ngắn gọn về khoá học"/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mô tả chi tiết</label>
+                        <textarea id="description" class="form-control" rows="5" name="description"
+                                  placeholder="Nội dung khoá học..."
+                                  th:text="${courseForm?.description}"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price + Tags -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="mb-0"><i class="bi bi-cash-stack me-2"></i>Giá bán</h5>
+                        </div>
+                        <div class="card-body">
+                            <label class="form-label fw-semibold">Giá (VNĐ)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₫</span>
+                                <input type="number" id="price" class="form-control" name="price"
+                                       th:value="${courseForm?.price}"
+                                       placeholder="0" min="0" step="1000"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="mb-0"><i class="bi bi-tags me-2"></i>Tags</h5>
+                        </div>
+                        <div class="card-body">
+                            <label class="form-label fw-semibold">Tags khoá học</label>
+                            <div class="d-flex flex-wrap gap-2 border rounded p-2 bg-white"
+                                 id="tagsContainer"
+                                 onclick="document.getElementById('tagInput').focus()">
+                                <input type="text" id="tagInput" class="tag-input"
+                                       placeholder="Nhập tag rồi Enter"/>
+                            </div>
+                            <input type="hidden" id="tagsHidden" name="tags"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thumbnail -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-image me-2"></i>Ảnh bìa khoá học</h5>
+                </div>
+                <div class="card-body">
+                    <!-- PREVIEW -->
+                    <input type="hidden" th:field="*{courseForm.thumbnailUrl}" name="thumbnailUrl">
+                    <div id="thumbnail-preview"
+                         th:style="${courseForm.thumbnailUrl != null && !courseForm.thumbnailUrl.isEmpty()}? 'display:block': 'display:none'">
+                        <img id="thumb-img"
+                             th:src="${courseForm.thumbnailUrl}"
+                             alt="thumbnail"/>
+                        <button type="button"
+                                class="btn btn-danger btn-sm rounded-circle remove-thumb"
+                                onclick="removeThumbnail()">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                    <!-- UPLOAD ZONE -->
+                    <div class="upload-zone"
+                         id="thumb-zone"
+                         th:style="${courseForm.thumbnailUrl != null && !courseForm.thumbnailUrl.isEmpty()}? 'display:none': 'display:block'">
+                        <input type="file"
+                               id="thumbnailInput"
+                               accept="image/*"
+                               name="thumbnailFile"
+                               onchange="previewThumbnail(event)"/>
+                        <div class="display-6 mb-3 text-muted">
+                            <i class="bi bi-image"></i>
+                        </div>
+                        <div class="fw-semibold">
+                            Kéo thả hoặc chọn ảnh
+                        </div>
+                        <div class="text-muted small">
+                            PNG, JPG, WEBP · Tỷ lệ 16:9 khuyến nghị
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── NÚT LƯU THÔNG TIN KHOÁ HỌC ── -->
+            <div class="d-flex justify-content-end mb-5">
+                <button type="button" id="btnSaveOverview"
+                        class="btn btn-dark px-4"
+                        onclick="saveCourseOverview()">
+                    <span class="spinner-border spinner-border-sm me-1" style="display:none"></span>
+                    <span class="btn-text">
+                    <i class="bi bi-floppy me-1"></i>Lưu thông tin khoá học
+                </span>
+                </button>
+            </div>
+        </form>
+
+        <!-- ───────────────── NỘI DUNG KHOÁ HỌC ───────────────── -->
+        <div id="curriculumSection">
+            <!-- Hiển thị sau khi đã có courseId -->
+            <div id="curriculumLocked"
+                 class="alert alert-secondary d-flex align-items-center gap-2 mb-4"
+                 th:if="${courseForm?.courseId == null}">
+                <i class="bi bi-lock fs-5"></i>
+                <span>Vui lòng <strong>lưu thông tin khoá học</strong> trước khi thêm nội dung.</span>
+            </div>
+
+            <div id="curriculumBuilder" th:classappend="${courseForm?.courseId == null} ? 'd-none' : ''">
+                <div class="mb-2">
+                    <h2 class="fw-bold mb-1">Nội dung khoá học</h2>
+                    <p class="text-muted mb-0">Tổ chức bài học theo chương</p>
+                </div>
+                <div id="sectionsContainer"></div>
+                <button type="button"
+                        class="btn btn-outline-dark w-100 py-3"
+                        onclick="addSection()">
+                    <i class="bi bi-plus-circle me-2"></i>Thêm chương mới
+                </button>
+            </div>
+        </div>
+    </main>
+
+
+    <!-- ═══════════════════ SECTION TEMPLATE ═══════════════════ -->
+    <template id="sectionTemplate">
+        <div class="section-accordion card shadow-sm border-0 mb-3"
+             data-section-id="" data-saved="false">
+            <div class="card-header bg-light d-flex align-items-center gap-2 py-3"
+                 onclick="toggleSection(this)">
+                <i class="bi bi-grip-vertical text-muted"></i>
+                <span class="badge text-bg-dark section-order-badge">
+                    Chương
+                </span>
+                <input type="text"
+                       class="form-control form-control-sm section-title-input"
+                       placeholder="Tên chương..."
+                       onclick="event.stopPropagation()"/>
+                <div class="d-flex gap-2 ms-auto" onclick="event.stopPropagation()">
+                    <!-- Nút lưu section -->
+                    <button type="button"
+                            class="btn btn-success btn-sm btn-save-section"
+                            onclick="saveSection(this)">
+                        <span class="spinner-border spinner-border-sm me-1"
+                              style="display:none"></span>
+                        <span class="btn-text">
+                            Lưu chương
+                        </span>
+                    </button>
+                    <button type="button"
+                            class="btn btn-outline-danger btn-sm"
+                            onclick="removeSection(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="section-acc-body card-body">
+                <div class="lessons-list"></div>
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm mt-3 btn-add-lesson"
+                        onclick="addLesson(this)"
+                        disabled>
+                    <i class="bi bi-plus-circle me-1"></i>Thêm bài học
+                </button>
+                <div class="form-text text-warning mt-1 hint-save-section">
+                    Lưu chương trước khi thêm bài học.
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- ═══════════════════ LESSON TEMPLATE ═══════════════════ -->
+    <template id="lessonTemplate">
+        <div class="lesson-accordion card border mb-3"
+             data-lesson-id="" data-saved="false">
+            <div class="card-header d-flex align-items-center gap-2"
+                 onclick="toggleLesson(this)">
+                <i class="bi bi-grip-vertical text-muted"></i>
+                <span class="badge text-bg-primary lesson-type-badge">Video</span>
+                <span class="lesson-acc-title flex-grow-1 text-truncate">Bài học mới</span>
+
+                <!-- saved badge -->
+                <span class="lesson-saved-badge badge text-bg-success"
+                      style="display:none!important">
+                    <i class="bi bi-check2 me-1"></i>Đã lưu
+                </span>
+
+                <div class="d-flex gap-2" onclick="event.stopPropagation()">
+                    <button type="button"
+                            class="btn btn-outline-danger btn-sm"
+                            onclick="removeLesson(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="lesson-acc-body card-body">
+                <!-- Common fields -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-9">
+                        <label class="form-label fw-semibold">Tên bài học</label>
+                        <input type="text"
+                               class="form-control lesson-title-input"
+                               placeholder="Nhập tên bài học..."
+                               oninput="updateLessonTitle(this)"/>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Thứ tự</label>
+                        <input type="number"
+                               class="form-control order-field"
+                               value="1" min="1"/>
+                    </div>
+                </div>
+
+                <!-- Type selector -->
+                <div class="mb-3 d-flex gap-2 flex-wrap">
+                    <button type="button"
+                            class="btn btn-primary btn-sm lesson-type-btn"
+                            onclick="switchLessonType(this,'video')">
+                        <i class="bi bi-play-circle me-1"></i>Video
+                    </button>
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm lesson-type-btn"
+                            onclick="switchLessonType(this,'article')">
+                        <i class="bi bi-file-text me-1"></i>Bài viết
+                    </button>
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm lesson-type-btn"
+                            onclick="switchLessonType(this,'quiz')">
+                        <i class="bi bi-patch-question me-1"></i>Quiz
+                    </button>
+                </div>
+
+                <!-- ── VIDEO panel ── -->
+                <div class="type-panel active" data-panel="video">
+                    <!-- CURRENT FILE INFO -->
+                    <div class="current-video-info mb-3"
+                         style="display:none">
+                        <div class="small mb-2">
+                            <strong>Video hiện tại:</strong>
+                            <a class="current-video-link"
+                               href="#"
+                               target="_blank">
+                                Xem video
+                            </a>
+                        </div>
+                        <div class="small">
+                            <strong>Subtitle hiện tại:</strong>
+                            <a class="current-subtitle-link"
+                               href="#"
+                               target="_blank">
+                                Xem subtitle
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <!-- VIDEO FILE -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-camera-video me-1"></i>
+                                Video
+                            </label>
+                            <div class="upload-zone">
+                                <input type="file"
+                                       class="lesson-video-file"
+                                       accept="video/mp4"
+                                       onchange="handleFileUpload(this)"/>
+                                <div class="mb-2 fs-2 text-muted">
+                                    <i class="bi bi-camera-video"></i>
+                                </div>
+                                <div class="fw-semibold upload-label">
+                                    Upload video mới
+                                </div>
+                                <div class="text-muted small">
+                                    MP4, MOV, AVI · Tối đa 2GB
+                                </div>
+                            </div>
+                        </div>
+                        <!-- SUBTITLE FILE -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-card-text me-1"></i>
+                                Phụ đề
+                            </label>
+                            <div class="upload-zone">
+                                <input type="file"
+                                       class="lesson-subtitle-file"
+                                       accept=".vtt,.srt,.ass"
+                                       onchange="handleFileUpload(this)"/>
+                                <div class="mb-2 fs-2 text-muted">
+                                    <i class="bi bi-card-text"></i>
+                                </div>
+                                <div class="fw-semibold upload-label">
+                                    Upload subtitle mới
+                                </div>
+                                <div class="text-muted small">
+                                    VTT, SRT, ASS
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── ARTICLE panel ── -->
+                <div class="type-panel" data-panel="article">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-file-text me-1"></i>Nội dung bài viết
+                    </label>
+                    <div class="border rounded">
+                        <div class="border-bottom p-2 d-flex gap-1 flex-wrap">
+                            <button type="button" class="btn btn-light btn-sm"
+                                    onclick="formatText('bold')" title="Bold">
+                                <i class="bi bi-type-bold"></i>
+                            </button>
+                            <button type="button" class="btn btn-light btn-sm"
+                                    onclick="formatText('italic')" title="Italic">
+                                <i class="bi bi-type-italic"></i>
+                            </button>
+                            <button type="button" class="btn btn-light btn-sm"
+                                    onclick="formatText('underline')" title="Underline">
+                                <i class="bi bi-type-underline"></i>
+                            </button>
+                            <div class="vr mx-1"></div>
+                            <button type="button" class="btn btn-light btn-sm"
+                                    onclick="formatText('insertUnorderedList')">
+                                <i class="bi bi-list-ul"></i>
+                            </button>
+                            <button type="button" class="btn btn-light btn-sm"
+                                    onclick="formatText('insertOrderedList')">
+                                <i class="bi bi-list-ol"></i>
+                            </button>
+                        </div>
+                        <div class="editor-area p-3"
+                             contenteditable="true"
+                             data-placeholder="Nhập nội dung bài viết..."></div>
+                    </div>
+                </div>
+
+                <!-- ── QUIZ panel ── -->
+                <div class="type-panel" data-panel="quiz">
+                    <div class="quiz-builder d-flex flex-column gap-3"></div>
+                    <button type="button"
+                            class="btn btn-outline-primary btn-sm mt-3"
+                            onclick="addQuestion(this)">
+                        <i class="bi bi-plus-circle me-1"></i>Thêm câu hỏi
+                    </button>
+                </div>
+
+                <!-- ── NÚT LƯU LESSON ── -->
+                <div class="d-flex justify-content-end mt-3 pt-3 border-top">
+                    <button type="button"
+                            class="btn btn-success btn-sm btn-save-lesson"
+                            onclick="saveLesson(this)">
+                        <span class="spinner-border spinner-border-sm me-1"
+                              style="display:none"></span>
+                        <span class="btn-text">
+                            <i class="bi bi-floppy me-1"></i>Lưu bài học
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+
+    <!-- ═══════════════════ QUESTION TEMPLATE ═══════════════════ -->
+    <template id="questionTemplate">
+        <div class="card border mb-2 question-card">
+            <div class="card-header d-flex align-items-center gap-2 bg-warning-subtle">
+                <span class="badge text-bg-warning question-num">Q1</span>
+                <input type="text" class="form-control form-control-sm"
+                       placeholder="Nhập câu hỏi..."/>
+                <button type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        onclick="removeQuestion(this)">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="answers-list d-flex flex-column gap-2 mb-2"></div>
+                <button type="button"
+                        class="btn btn-outline-success btn-sm"
+                        onclick="addAnswer(this)">
+                    <i class="bi bi-plus me-1"></i>Thêm đáp án
+                </button>
+            </div>
+        </div>
+    </template>
+
+
+    <!-- ═══════════════════ ANSWER TEMPLATE ═══════════════════ -->
+    <template id="answerTemplate">
+        <div class="d-flex align-items-center gap-2 border rounded p-2 answer-row">
+            <input type="checkbox" class="form-check-input answer-correct flex-shrink-0"
+                   title="Tích nếu là đáp án đúng"/>
+            <input type="text" class="form-control form-control-sm"
+                   placeholder="Nhập đáp án..."/>
+            <button type="button"
+                    class="btn btn-outline-danger btn-sm flex-shrink-0"
+                    onclick="removeAnswer(this)">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    </template>
+
+
+    <!-- ═══════════════════════════ SCRIPTS ═══════════════════════════ -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        /* ─── Global state ─── */
+        let sectionCount = 0;
+        let lessonCount = 0;
+        /* courseId được set sau khi lưu overview, hoặc lấy từ Thymeleaf khi edit */
+        let courseId = document.getElementById('courseId')?.value || null;
+        let courseVersionId = document.getElementById('courseVersionId')?.value || null;
+        const existingSections = /*[[${sections}]]*/ [];
+
+        /* ═══════════════════════════════════════════════════════════════
+           1. COURSE OVERVIEW
+        ═══════════════════════════════════════════════════════════════ */
+        function saveCourseOverview() {
+            const title = document.getElementById('title').value.trim();
+            if (!title) {
+                showToast('Vui lòng nhập tiêu đề khoá học.', 'danger');
+                return;
+            }
+            const price = Number(document.getElementById('price').value.trim());
+            if (isNaN(price) || price < 0) {
+                showToast('Giá khoá học phải lớn hơn hoặc bằng 0.', 'danger');
+                return;
+            }
+            const thumbnailUrl = document.querySelector('input[name="thumbnailUrl"]')?.value?.trim();
+            const thumbnailInput = document.getElementById('thumbnailInput');
+            const hasThumbnailFile = thumbnailInput.files.length > 0;
+            const hasThumbnailUrl = thumbnailUrl && thumbnailUrl !== '';
+            // nếu không có thumbnail cũ
+            // thì bắt buộc upload ảnh mới
+            if (!hasThumbnailUrl && !hasThumbnailFile) {
+                showToast('Vui lòng tải lên ảnh bìa khoá học.', 'danger');
+                return;
+            }
+            document.getElementById('courseForm').submit();
+        }
+
+        window.deleteCourse = async function () {
+            // chưa có course
+            if (!courseId) {
+                showToast('Khoá học chưa được tạo', 'warning');
+                return;
+            }
+            console.log(courseId)
+            // confirm
+            const confirmed = confirm('Bạn có chắc muốn xoá khoá học này không?');
+            if (!confirmed) return;
+            try {
+                const response = await fetch(
+                    `/create-course/${courseId}`,
+                    {
+                        method: 'DELETE'
+                    }
+                );
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(
+                        errorText || 'Xoá thất bại'
+                    );
+                }
+                showToast(
+                    'Đã xoá khoá học!',
+                    'success'
+                );
+                // redirect
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+            } catch (err) {
+                showToast(
+                    'Lỗi: ' + err.message,
+                    'danger'
+                );
+            }
+        }
+        /* ═══════════════════════════════════════════════════════════════
+           2. SECTION
+        ═══════════════════════════════════════════════════════════════ */
+        function renderExistingSections() {
+            const container = document.getElementById('sectionsContainer');
+            existingSections.forEach(section => {
+                sectionCount++;
+                const tmpl = document.getElementById('sectionTemplate');
+                const clone = tmpl.content.cloneNode(true);
+                const acc = clone.querySelector('.section-accordion');
+                // db id
+                acc.dataset.dbSectionId = section.id;
+                // saved
+                acc.dataset.saved = 'true';
+                // title
+                acc.querySelector('.section-title-input').value = section.title;
+                // display order
+                acc.querySelector('.section-order-badge').textContent = `Chương`;
+                // enable lesson button
+                acc.querySelector('.btn-add-lesson').disabled = false;
+                // remove hint
+                acc.querySelector('.hint-save-section')?.remove();
+                container.appendChild(clone);
+                if (section.lessons?.length > 0) {
+                    renderLessons(acc, section.lessons);
+                }
+            });
+        }
+
+        function addSection() {
+            if (!courseId) {
+                showToast('Lưu thông tin khoá học trước!', 'warning');
+                return;
+            }
+            const container = document.getElementById('sectionsContainer');
+            const tmpl = document.getElementById('sectionTemplate');
+            const clone = tmpl.content.cloneNode(true);
+            const el = clone.querySelector('.section-accordion');
+            el.dataset.sectionId = 'tmp_' + sectionCount++;
+            container.appendChild(clone);
+            animateIn(container.lastElementChild);
+        }
+
+        async function saveSection(btn) {
+            const acc = btn.closest('.section-accordion');
+            const title = acc.querySelector('.section-title-input').value.trim();
+            if (!title) {
+                showToast('Nhập tên chương!', 'warning');
+                return;
+            }
+            if (!courseVersionId) {
+                showToast('Lưu khoá học trước!', 'warning');
+                return;
+            }
+            setLoading(btn, true);
+            try {
+                const sectionId = acc.dataset.dbSectionId; /* có khi update */
+                const payload = {
+                    courseVersionId,
+                    title,
+                    displayOrder: getSectionOrder(acc),
+                    ...(sectionId ? {id: sectionId} : {})
+                };
+                const res = await fetch('/create-course/section', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Lỗi server');
+                /* lưu id trả về vào DOM để dùng khi thêm lesson */
+                acc.dataset.dbSectionId = data.id;
+                acc.dataset.saved = 'true';
+                /* mở khoá nút thêm bài học */
+                acc.querySelector('.btn-add-lesson').disabled = false;
+                acc.querySelector('.hint-save-section')?.remove();
+                /* show badge */
+                showToast('Đã lưu chương!', 'success');
+            } catch (err) {
+                showToast('Lỗi: ' + err.message, 'danger');
+            } finally {
+                setLoading(btn, false);
+            }
+        }
+
+        function getSectionOrder(acc) {
+            const all = [...document.querySelectorAll('.section-accordion')];
+            return all.indexOf(acc) + 1;
+        }
+
+        function toggleSection(header) {
+            const body = header.closest('.section-accordion').querySelector('.section-acc-body');
+            body.style.display = body.style.display === 'none' ? '' : 'none';
+        }
+
+        async function removeSection(btn) {
+            const acc = btn.closest('.section-accordion');
+            if (!confirm('Xoá chương này và toàn bộ bài học?')) {
+                return;
+            }
+            const sectionId = acc.dataset.dbSectionId;
+            try {
+                // nếu chưa lưu DB thì xoá luôn trên UI
+                if (!sectionId) {
+                    acc.remove();
+                    showToast('Đã xoá chương!', 'success');
+                    return;
+                }
+                const res = await fetch(
+                    '/create-course/section/delete/' + sectionId,
+                    {
+                        method: 'DELETE'
+                    }
+                );
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'Xoá thất bại');
+                }
+                acc.remove();
+                showToast('Đã xoá chương!', 'success');
+            } catch (err) {
+                showToast('Lỗi: ' + err.message, 'danger');
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           3. LESSON
+        ═══════════════════════════════════════════════════════════════ */
+        function addLesson(btn) {
+            const acc = btn.closest('.section-accordion');
+            const list = acc.querySelector('.lessons-list');
+            const tmpl = document.getElementById('lessonTemplate');
+            const clone = tmpl.content.cloneNode(true);
+            const el = clone.querySelector('.lesson-accordion');
+            el.dataset.lessonId = 'tmp_' + lessonCount++;
+            /* tự động điền thứ tự */
+            el.querySelector('.order-field').value =
+                list.querySelectorAll('.lesson-accordion').length + 1;
+            list.appendChild(clone);
+            animateIn(list.lastElementChild);
+        }
+
+        async function saveLesson(btn) {
+            const lessonAcc = btn.closest('.lesson-accordion');
+            const sectionAcc = lessonAcc.closest('.section-accordion');
+            const sectionDbId = sectionAcc?.dataset.dbSectionId;
+            if (!sectionDbId) {
+                showToast('Lưu chương trước!', 'warning');
+                return;
+            }
+            const title = lessonAcc.querySelector('.lesson-title-input').value.trim();
+            const order = lessonAcc.querySelector('.order-field').value;
+            const lessonId = lessonAcc.dataset.dbLessonId; /* có khi update */
+            if (!title) {
+                showToast('Nhập tên bài học!', 'warning');
+                return;
+            }
+            /* Xác định loại đang active */
+            const activePanel = lessonAcc.querySelector('.type-panel.active');
+            const type = activePanel?.dataset.panel; /* video | article | quiz */
+            setLoading(btn, true);
+            try {
+                let res, data;
+                if (type === 'video') {
+                    const fd = new FormData();
+                    fd.append('sectionId', sectionDbId);
+                    fd.append('courseId', courseId);
+                    fd.append('title', title);
+                    fd.append('displayOrder', order);
+                    fd.append('type', 'VIDEO');
+                    if (lessonId) fd.append('id', lessonId);
+                    const videoFile = lessonAcc.querySelector('.lesson-video-file')?.files[0];
+                    const subtitleFile = lessonAcc.querySelector('.lesson-subtitle-file')?.files[0];
+                    if (videoFile) fd.append('videoFile', videoFile);
+                    if (subtitleFile) fd.append('subtitleFile', subtitleFile);
+                    res = await fetch('/create-course/lesson', {method: 'POST', body: fd});
+                    data = await res.json();
+                } else if (type === 'article') {
+                    /* ── Article: JSON ── */
+                    const content = activePanel.querySelector('.editor-area')?.innerHTML || '';
+                    const payload = {
+                        sectionId: sectionDbId,
+                        courseId,
+                        title,
+                        displayOrder: Number(order),
+                        type: 'ARTICLE',
+                        content,
+                        ...(lessonId ? {id: lessonId} : {})
+                    };
+                    res = await fetch('/create-course/lesson', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+                    data = await res.json();
+                } else if (type === 'quiz') {
+                    /* ── Quiz: JSON với danh sách câu hỏi / đáp án ── */
+                    const questions = collectQuizData(activePanel);
+                    if (questions.length === 0) {
+                        showToast('Thêm ít nhất 1 câu hỏi cho quiz!', 'warning');
+                        setLoading(btn, false);
+                        return;
+                    }
+                    const payload = {
+                        sectionId: sectionDbId,
+                        courseId,
+                        title,
+                        displayOrder: Number(order),
+                        type: 'QUIZ',
+                        questions,
+                        ...(lessonId ? {id: lessonId} : {})
+                    };
+                    res = await fetch('/create-course/lesson', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+                    data = await res.json();
+                }
+                if (!res.ok) throw new Error(data.message || 'Lỗi server');
+                lessonAcc.dataset.dbLessonId = data.id;
+                lessonAcc.dataset.saved = 'true';
+                lessonAcc.querySelector('.lesson-saved-badge').style.cssText = '';
+                showToast('Đã lưu bài học!', 'success');
+            } catch (err) {
+                showToast('Lỗi: ' + err.message, 'danger');
+            } finally {
+                setLoading(btn, false);
+            }
+        }
+
+        /** Thu thập dữ liệu quiz từ panel */
+        function collectQuizData(panel) {
+            return [...panel.querySelectorAll('.question-card')].map((qCard, qi) => {
+                const questionText = qCard.querySelector('input[type="text"]').value.trim();
+                const answers = [...qCard.querySelectorAll('.answer-row')].map((row, ai) => ({
+                    text: row.querySelector('input[type="text"]').value.trim(),
+                    isCorrect: row.querySelector('.answer-correct').checked
+                }));
+                return {displayOrder: qi + 1, questionText, answers};
+            });
+        }
+
+        function toggleLesson(header) {
+            const body = header.closest('.lesson-accordion').querySelector('.lesson-acc-body');
+            body.style.display = body.style.display === 'none' ? '' : 'none';
+        }
+
+        async function removeLesson(btn) {
+            const lessonAcc = btn.closest('.lesson-accordion');
+            if (!confirm('Xoá bài học này?')) {
+                return;
+            }
+            const lessonId = lessonAcc.dataset.dbLessonId;
+            try {
+                // lesson mới tạo chưa lưu DB
+                if (!lessonId) {
+                    lessonAcc.remove();
+                    showToast('Đã xoá bài học!', 'success');
+                    return;
+                }
+                const res = await fetch(
+                    '/create-course/lesson/delete/' + lessonId,
+                    {
+                        method: 'DELETE'
+                    }
+                );
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'Xoá thất bại');
+                }
+                lessonAcc.remove();
+                showToast('Đã xoá bài học!', 'success');
+            } catch (err) {
+                showToast('Lỗi: ' + err.message, 'danger');
+            }
+        }
+
+        function updateLessonTitle(input) {
+            const acc = input.closest('.lesson-accordion');
+            acc.querySelector('.lesson-acc-title').textContent = input.value || 'Bài học mới';
+        }
+
+        function renderLessons(sectionAcc, lessons) {
+            const list = sectionAcc.querySelector('.lessons-list');
+            lessons.forEach(lesson => {
+                lessonCount++;
+                const tmpl = document.getElementById('lessonTemplate');
+                const clone = tmpl.content.cloneNode(true);
+                const lessonAcc = clone.querySelector('.lesson-accordion');
+                // db id
+                lessonAcc.dataset.dbLessonId = lesson.id;
+                // saved
+                lessonAcc.dataset.saved = 'true';
+                // title
+                lessonAcc.querySelector('.lesson-title-input').value = lesson.title;
+                // accordion title
+                lessonAcc.querySelector('.lesson-acc-title').textContent = lesson.title;
+                // order
+                lessonAcc.querySelector('.order-field').value = lesson.displayOrder;
+                // type
+                const type = lesson.type.toLowerCase();
+                // active panel
+                lessonAcc.querySelectorAll('.type-panel').forEach(p => {p.classList.remove('active');});
+                lessonAcc.querySelector(`[data-panel="${type}"]`).classList.add('active');
+                // buttons
+                lessonAcc.querySelectorAll(
+                    '.lesson-type-btn'
+                ).forEach(btn => {
+                    btn.className = 'btn btn-outline-secondary btn-sm lesson-type-btn';
+                });
+                const activeBtn =
+                    [...lessonAcc.querySelectorAll('.lesson-type-btn')]
+                        .find(btn => btn.getAttribute('onclick')?.includes(type));
+                if (activeBtn) {
+                    activeBtn.className = 'btn btn-primary btn-sm lesson-type-btn';
+                }
+                // badge
+                const labels = {
+                    video: 'Video',
+                    article: 'Bài viết',
+                    quiz: 'Quiz'
+                };
+                lessonAcc.querySelector('.lesson-type-badge').textContent = labels[type];
+                // VIDEO
+                if (type === 'video') {
+                    const infoBox = lessonAcc.querySelector('.current-video-info');
+                    const videoLink = lessonAcc.querySelector('.current-video-link');
+                    const subtitleLink = lessonAcc.querySelector('.current-subtitle-link');
+                    // show info block
+                    infoBox.style.display = '';
+                    // video url
+                    if (lesson.videoUrl) {
+                        videoLink.href = lesson.videoUrl;
+                        videoLink.textContent = lesson.videoUrl;
+                    } else {
+                        videoLink.textContent = 'Chưa có video';
+                    }
+                    // subtitle url
+                    if (lesson.subtitleUrl) {
+                        subtitleLink.href = lesson.subtitleUrl;
+                        subtitleLink.textContent = lesson.subtitleUrl;
+                    } else {
+                        subtitleLink.textContent = 'Không có subtitle';
+                    }
+                }
+                // article content
+                if (type === 'article') {
+                    lessonAcc.querySelector('.editor-area').innerHTML = lesson.articleContent || '';
+                }
+                // quiz
+                if (type === 'quiz' && lesson.questions) {
+                    const quizBuilder = lessonAcc.querySelector('.quiz-builder');
+                    lesson.questions.forEach((question, qIndex) => {
+                        // clone question template
+                        const qTemplate = document.getElementById('questionTemplate');
+                        const qClone = qTemplate.content.cloneNode(true);
+                        const qCard = qClone.querySelector('.question-card');
+                        // question number
+                        qCard.querySelector('.question-num').textContent = 'Q' + (qIndex + 1);
+                        // question text
+                        qCard.querySelector('.card-header input[type="text"]').value = question.questionText || '';
+                        // answers list
+                        const answersList = qCard.querySelector('.answers-list');
+                        // render answers
+                        if (question.answers) {
+                            question.answers.forEach(answer => {
+                                const aTemplate = document.getElementById('answerTemplate');
+                                const aClone = aTemplate.content.cloneNode(true);
+                                const answerRow = aClone.querySelector('.answer-row');
+                                // checkbox
+                                answerRow.querySelector('.answer-correct').checked = !!answer.isCorrect;
+                                // answer text
+                                answerRow.querySelector('input[type="text"]').value = answer.text || '';
+                                answersList.appendChild(answerRow);
+                            });
+                        }
+                        quizBuilder.appendChild(qCard);
+                    });
+                }
+                list.appendChild(clone);
+            });
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           4. LESSON TYPE SWITCH
+        ═══════════════════════════════════════════════════════════════ */
+        function switchLessonType(btn, type) {
+            const body = btn.closest('.lesson-acc-body');
+            /* Reset type buttons */
+            body.querySelectorAll('.lesson-type-btn').forEach(b => {
+                b.className = 'btn btn-outline-secondary btn-sm lesson-type-btn';
+            });
+            btn.className = 'btn btn-primary btn-sm lesson-type-btn';
+            /* Show correct panel */
+            body.querySelectorAll('.type-panel').forEach(p => p.classList.remove('active'));
+            body.querySelector('[data-panel="' + type + '"]').classList.add('active');
+            /* Update badge */
+            const badge = btn.closest('.lesson-accordion').querySelector('.lesson-type-badge');
+            const labels = {video: 'Video', article: 'Bài viết', quiz: 'Quiz'};
+            badge.textContent = labels[type];
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           5. QUIZ
+        ═══════════════════════════════════════════════════════════════ */
+        function addQuestion(btn) {
+            const builder = btn.previousElementSibling; /* .quiz-builder */
+            const tmpl = document.getElementById('questionTemplate');
+            const clone = tmpl.content.cloneNode(true);
+            const num = builder.querySelectorAll('.question-card').length + 1;
+            clone.querySelector('.question-num').textContent = 'Q' + num;
+            builder.appendChild(clone);
+            /* thêm 2 đáp án mặc định */
+            const qCard = builder.lastElementChild;
+            addAnswer(qCard.querySelector('[onclick="addAnswer(this)"]'));
+            addAnswer(qCard.querySelector('[onclick="addAnswer(this)"]'));
+            animateIn(qCard);
+        }
+
+        function removeQuestion(btn) {
+            btn.closest('.question-card').remove();
+            /* renumber */
+            btn.closest('.quiz-builder')?.querySelectorAll('.question-num').forEach((el, i) => {
+                el.textContent = 'Q' + (i + 1);
+            });
+        }
+
+        function addAnswer(btn) {
+            const list = btn.previousElementSibling; /* .answers-list */
+            const tmpl = document.getElementById('answerTemplate');
+            const clone = tmpl.content.cloneNode(true);
+            list.appendChild(clone);
+        }
+
+        function removeAnswer(btn) {
+            btn.closest('.answer-row').remove();
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           6. THUMBNAIL
+        ═══════════════════════════════════════════════════════════════ */
+        function previewThumbnail(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById("thumb-img").src = e.target.result;
+                document.getElementById("thumbnail-preview").style.display = "block";
+                document.getElementById("thumb-zone").style.display = "none";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeThumbnail() {
+            document.getElementById("thumbnailInput").value = "";
+            document.getElementById("thumb-img").src = "";
+            document.getElementById("thumbnail-preview").style.display = "none";
+            document.getElementById("thumb-zone").style.display = "block";
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           7. FILE UPLOAD DISPLAY
+        ═══════════════════════════════════════════════════════════════ */
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const zone = input.closest('.upload-zone');
+            const label = zone.querySelector('.upload-label');
+            if (label) {
+                label.textContent = file.name;
+            }
+            zone.classList.add('has-file');
+            // =========================
+            // IMAGE PREVIEW
+            // =========================
+            if (file.type.startsWith('image/')) {
+                const previewImg = document.querySelector('.thumbnail-preview');
+                if (previewImg) {
+                    previewImg.src = URL.createObjectURL(file);
+                    previewImg.style.display = '';
+                }
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           8. TAGS
+        ═══════════════════════════════════════════════════════════════ */
+        (function initTags() {
+            const input = document.getElementById('tagInput');
+            if (!input) return;
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    const val = this.value.trim().replace(/,/g, '');
+                    if (val) addTag(val);
+                    this.value = '';
+                }
+                if (e.key === 'Backspace' && !this.value) {
+                    document.querySelector('#tagsContainer .badge:last-of-type')?.remove();
+                    syncTags();
+                }
+            });
+        })();
+
+        function addTag(text) {
+            const container = document.getElementById('tagsContainer');
+            const input = document.getElementById('tagInput');
+            const tag = document.createElement('span');
+            tag.className = 'badge text-bg-dark d-inline-flex align-items-center gap-1 py-2 px-2';
+            tag.innerHTML = `${escHtml(text)}<button type="button"
+                class="btn-close btn-close-white ms-1" style="font-size:.6rem"
+                onclick="this.parentElement.remove();syncTags()"></button>`;
+            container.insertBefore(tag, input);
+            syncTags();
+        }
+
+        function syncTags() {
+            const tags = [...document.querySelectorAll('#tagsContainer .badge')]
+                .map(t => t.firstChild?.textContent?.trim())
+                .filter(Boolean);
+            document.getElementById('tagsHidden').value = tags.join(',');
+        }
+
+        function escHtml(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           9. RICH TEXT
+        ═══════════════════════════════════════════════════════════════ */
+        function formatText(cmd) {
+            document.execCommand(cmd, false, null);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           10. PUBLISH
+        ═══════════════════════════════════════════════════════════════ */
+        function publishCourse() {
+            if (!courseId) {
+                showToast('Lưu thông tin khoá học trước khi xuất bản!', 'warning');
+                return;
+            }
+            if (!confirm('Xuất bản khoá học này?')) {
+                return;
+            }
+            fetch('/create-course/publish/' + courseId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(async response => {
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(
+                            data.message || 'Publish failed'
+                        );
+                    }
+                    return data;
+                })
+                .then(data => {
+                    showToast(
+                        data.message ||
+                        'Khoá học đã được xuất bản!',
+                        'success'
+                    );
+                    // redirect nếu backend trả
+                    if (data.redirectUrl) {
+                        window.location.href =
+                            data.redirectUrl;
+                    }
+                })
+                .catch(error => {
+                    showToast(
+                        error.message ||
+                        'Xuất bản thất bại!',
+                        'danger'
+                    );
+                });
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           HELPERS
+        ═══════════════════════════════════════════════════════════════ */
+        function setLoading(btn, on) {
+            const spinner = btn.querySelector('.spinner-border');
+            const text = btn.querySelector('.btn-text');
+            if (spinner) spinner.style.display = on ? 'inline-block' : 'none';
+            if (text) text.style.display = on ? 'none' : '';
+            btn.disabled = on;
+        }
+
+        function animateIn(el) {
+            if (!el) return;
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(8px)';
+            requestAnimationFrame(() => {
+                el.style.transition = 'all .2s';
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            });
+        }
+
+        /* Toast */
+        function showToast(msg, type = 'info') {
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.style.cssText =
+                    'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem;';
+                document.body.appendChild(container);
+            }
+            const t = document.createElement('div');
+            t.className = `alert alert-${type} shadow-sm py-2 px-3 mb-0 d-flex align-items-center gap-2`;
+            t.style.minWidth = '220px';
+            const icons = {
+                success: 'check-circle-fill', danger: 'exclamation-triangle-fill',
+                warning: 'exclamation-circle-fill', info: 'info-circle-fill'
+            };
+            t.innerHTML = `<i class="bi bi-${icons[type] || 'info-circle-fill'}"></i>${msg}`;
+            container.appendChild(t);
+            setTimeout(() => {
+                t.style.transition = 'opacity .3s';
+                t.style.opacity = '0';
+                setTimeout(() => t.remove(), 300);
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (existingSections.length > 0) {
+                renderExistingSections();
+            }
+        });
+    </script>
+
+</div>
+</body>
+</html>

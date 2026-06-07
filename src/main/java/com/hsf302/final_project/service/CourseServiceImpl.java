@@ -1,77 +1,612 @@
 package com.hsf302.final_project.service;
 
 import com.hsf302.final_project.constant.ECourseStatus;
-import com.hsf302.final_project.dto.response.CourseCardDTO;
-import com.hsf302.final_project.entity.Course;
-import com.hsf302.final_project.entity.CourseVersion;
-import com.hsf302.final_project.repository.CourseRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.hsf302.final_project.constant.EFilePurpose;
+import com.hsf302.final_project.constant.EFileType;
+import com.hsf302.final_project.constant.ELessonType;
+import com.hsf302.final_project.dto.request.*;
 import com.hsf302.final_project.dto.response.*;
 import com.hsf302.final_project.entity.*;
 import com.hsf302.final_project.repository.*;
-import org.springframework.transaction.annotation.Transactional;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import com.hsf302.final_project.dto.response.*;
+import com.hsf302.final_project.entity.*;
+import com.hsf302.final_project.repository.*;
 import java.util.ArrayList;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class CourseServiceImpl implements CourseService {
-
+    private final CourseSectionRepository courseSectionRepository;
     private final CourseRepository courseRepository;
+    private final CourseVersionRepository courseVersionRepository;
+    private final AppFileRepository appFileRepository;
+    private final CourseSectionRepository sectionRepository;
+    private final LessonRepository lessonRepository;
+    private final QuizQuestionRepository quizQuestionRepository;
+    private final QuizAnswerRepository quizAnswerRepository;
+    private final VideoProcessingService videoProcessingService;
+    private final UserRepository userRepository;
+    private final S3Service s3Service;
+    private final LessonCommentRepository lessonCommentRepository;
+    private final CourseFeedbackRepository courseFeedbackRepository;
 
     @Override
-    @Transactional(readOnly = true)
     public List<CourseCardDTO> getTop5Courses() {
-
         // Lấy danh sách khoá học đã duyệt, không bị xoá
-        List<Course> courses = courseRepository
-                .findByDeleteFlagFalseAndCurrentPublishedVersion_StatusOrderByCreatedAtDesc(
-                        ECourseStatus.APPROVED
-                );
-
+        List<Course> courses = courseRepository.findByDeleteFlagFalseAndCurrentPublishedVersion_StatusOrderByCreatedAtDesc(ECourseStatus.APPROVED);
         // Giới hạn 5 khoá học đầu tiên
         // rồi chuyển từng Course sang CourseCardDTO
         return courses.stream()
                 .limit(5)
-                .map(this::chuyenDoiSangDTO)
+                .map(this::convertToDto)
                 .toList();
     }
 
     // Hàm chuyển đổi từ Course (entity) → CourseCardDTO
-    private CourseCardDTO chuyenDoiSangDTO(Course course) {
-
-        CourseVersion phienBan = course.getCurrentPublishedVersion();
-
+    private CourseCardDTO convertToDto(Course course) {
+        CourseVersion version = course.getCurrentPublishedVersion();
         // Lấy link ảnh nếu có, không thì để null
-        String anhThumbnail = null;
-        if (phienBan.getThumbnail() != null) {
-            anhThumbnail = phienBan.getThumbnail().getFileUrl();
+        String thumbnail = null;
+        if (version.getThumbnail() != null) {
+            thumbnail = version.getThumbnail().getFileUrl();
         }
-
         // Trả về DTO với các thông tin cần hiển thị
         return CourseCardDTO.builder()
                 .courseId(course.getCourseId())
-                .title(phienBan.getTitle())
-                .subtitle(phienBan.getSubtitle())
+                .title(version.getTitle())
+                .subtitle(version.getSubtitle())
                 .instructorName(course.getInstructor().getFullName())
-                .price(phienBan.getPrice())
+                .price(version.getPrice())
                 .averageRating(course.getAverageRating())
                 .totalReviews(course.getTotalReviews())
-                .thumbnailUrl(anhThumbnail)
+                .thumbnailUrl(thumbnail)
                 .build();
     }
 
-    // ===== THÊM CÁC FIELD MỚI VÀO ĐẦU CLASS =====
-    private final CourseSectionRepository courseSectionRepository;
-    private final LessonRepository lessonRepository;
-    private final CourseFeedbackRepository courseFeedbackRepository;
+    public Long createCourseOverview(CourseOverviewForm form) {
+        Course course;
+        CourseVersion version;
+        // update
+        if (form.getCourseId() != null && form.getCourseVersionId() != null) {
+            course = courseRepository.findById(form.getCourseId())
+                    .orElseThrow(() ->
+                            new RuntimeException("Course not found"));
+            version = courseVersionRepository.findById(
+                            form.getCourseVersionId())
+                    .orElseThrow(() ->
+                            new RuntimeException("Course version not found"));
+        }
+        // create
+        else {
+            course = new Course();
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            User instructor = userRepository.findByEmail(email)
+                            .orElseThrow(() -> new RuntimeException("User not found"));
+            course.setInstructor(instructor);
+            course.setAverageRating(BigDecimal.ZERO);
+            course.setTotalReviews(0);
+            course.setTotalStudents(0);
+            courseRepository.save(course);
+            version = new CourseVersion();
+            version.setCourse(course);
+            version.setVersionNumber(1);
+            version.setStatus(ECourseStatus.DRAFT);
+        }
+        version.setTitle(form.getTitle());
+        version.setSubtitle(form.getSubtitle());
+        version.setDescription(form.getDescription());
+        version.setPrice(
+                form.getPrice() != null
+                        ? form.getPrice()
+                        : BigDecimal.ZERO
+        );
+        // thumbnail
+        MultipartFile thumbnailFile = form.getThumbnailFile();
+        if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
+            // upload lên S3
+            String fileUrl = s3Service.uploadFileWithoutException(thumbnailFile);
+            // tạo AppFile
+            AppFile appFile = new AppFile();
+            appFile.setFileName(thumbnailFile.getOriginalFilename());
+            appFile.setFileUrl(fileUrl);
+            appFile.setFileType(EFileType.IMAGE);
+            appFile.setPurpose(EFilePurpose.COURSE_THUMBNAIL);
+            // lấy extension
+            String originalName = thumbnailFile.getOriginalFilename();
+            if (originalName != null && originalName.contains(".")) {
+                String extension = originalName.substring(originalName.lastIndexOf(".") + 1);
+                appFile.setExtension(extension);
+            }
+            // save AppFile
+            appFileRepository.save(appFile);
+            // set vào version
+            version.setThumbnail(appFile);
+        }
+        courseVersionRepository.save(version);
+        // chỉ set version cho course khi create hoặc chưa có current draft version
+        if (course.getCurrentDraftVersion() == null) {
+            course.setCurrentDraftVersion(version);
+        }
+        courseRepository.save(course);
+        return course.getCourseId();
+    }
+
+    @Override
+    public CourseOverviewForm getCourseOverview(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() ->
+                        new RuntimeException("Course not found"));
+        // ưu tiên lấy draft
+        CourseVersion version =
+                courseVersionRepository
+                        .findByCourse_CourseIdAndStatus(
+                                courseId,
+                                ECourseStatus.DRAFT
+                        )
+                        .orElse(
+                                course.getCurrentPublishedVersion()
+                        );
+        CourseOverviewForm form = new CourseOverviewForm();
+        form.setCourseId(course.getCourseId());
+        if (version != null) {
+            form.setCourseVersionId(version.getCourseVersionId());
+            form.setTitle(version.getTitle());
+            form.setSubtitle(version.getSubtitle());
+            form.setDescription(version.getDescription());
+            form.setPrice(version.getPrice());
+            String tags = version.getTags()
+                    .stream()
+                    .map(Tag::getTagName)
+                    .collect(Collectors.joining(", "));
+            form.setTags(tags);
+            form.setThumbnailUrl(version.getThumbnail().getFileUrl());
+        }
+        return form;
+    }
+
+    public Long saveSection(SectionRequest request) {
+        CourseSection section;
+        if (request.getId() != null) {
+            section = sectionRepository.findById(request.getId())
+                    .orElseThrow(() ->
+                            new RuntimeException("Section not found"));
+        } else {
+            section = new CourseSection();
+        }
+        CourseVersion course = courseVersionRepository.findById(request.getCourseVersionId())
+                .orElseThrow(() ->
+                        new RuntimeException("Course not found"));
+        section.setCourseVersion(course);
+        section.setTitle(request.getTitle());
+        section.setDisplayOrder(request.getDisplayOrder());
+        sectionRepository.save(section);
+        return section.getSectionId();
+    }
+
+    @Override
+    public List<SectionResponse> getSectionsByCourseVersionId(Long courseVersionId) {
+        List<CourseSection> sections = sectionRepository
+                .findByCourseVersion_CourseVersionIdOrderByDisplayOrder(courseVersionId);
+        return sections.stream()
+                .map(section -> {
+                    SectionResponse response = new SectionResponse();
+                    response.setId(section.getSectionId());
+                    response.setTitle(section.getTitle());
+                    response.setDisplayOrder(section.getDisplayOrder());
+                    // LESSONS
+                    List<Lesson> lessons = lessonRepository
+                            .findBySection_SectionIdOrderByDisplayOrder(section.getSectionId());
+                    response.setLessons(lessons.stream().map(this::mapLessonResponse).toList());
+                    return response;
+                })
+                .toList();
+    }
+
+    @Override
+    public void deleteSection(Long sectionId) {
+        CourseSection section = sectionRepository
+            .findById(sectionId)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy chương"));
+        sectionRepository.delete(section);
+    }
+
+    @Override
+    public Long saveLesson(LessonRequest request) {
+        Lesson lesson;
+        // update
+        if (request.getId() != null) {
+            lesson = lessonRepository.findById(request.getId())
+                    .orElseThrow(() -> new RuntimeException("Lesson not found"));
+        }
+        // create
+        else {
+            lesson = new Lesson();
+        }
+        CourseSection section = sectionRepository
+                        .findById(request.getSectionId())
+                        .orElseThrow(() -> new RuntimeException("Section not found"));
+        lesson.setSection(section);
+        lesson.setTitle(request.getTitle());
+        lesson.setDisplayOrder(request.getDisplayOrder());
+        lesson.setLessonType(ELessonType.valueOf(request.getType()));
+        // ARTICLE
+        if (lesson.getLessonType() == ELessonType.ARTICLE) {
+            lesson.setArticleContent(request.getContent());
+        }
+        /* save lesson trước để có lessonId */
+        lessonRepository.save(lesson);
+        // QUIZ
+        if (lesson.getLessonType() == ELessonType.QUIZ) {
+            // xoá question cũ nếu update
+            quizQuestionRepository.deleteByLesson_LessonId(lesson.getLessonId());
+            if (request.getQuestions() != null) {
+                for (QuestionRequest q : request.getQuestions()) {
+                    QuizQuestion question = new QuizQuestion();
+                    question.setLesson(lesson);
+                    question.setQuestionText(q.getQuestionText());
+                    question.setDisplayOrder(q.getDisplayOrder());
+                    quizQuestionRepository.save(question);
+                    // answers
+                    if (q.getAnswers() != null) {
+                        int answerOrder = 1;
+                        for (AnswerRequest a : q.getAnswers()) {
+                            QuizAnswer answer = new QuizAnswer();
+                            answer.setQuestion(question);
+                            answer.setAnswerText(a.getText());
+                            answer.setIsCorrect(a.getIsCorrect());
+                            answer.setDisplayOrder(answerOrder++);
+                            quizAnswerRepository.save(answer);
+                        }
+                    }
+                }
+            }
+        }
+        return lesson.getLessonId();
+    }
+
+    @Override
+    @Transactional
+    public Long saveVideoLesson(VideoLessonRequest request) {
+        Lesson lesson;
+        if (request.getId() != null) {
+            lesson = lessonRepository
+                    .findById(request.getId())
+                    .orElseThrow(() ->
+                            new RuntimeException(
+                                    "Lesson not found"
+                            )
+                    );
+        }
+        else {
+            lesson = new Lesson();
+        }
+        // =========================
+        // SECTION
+        // =========================
+        CourseSection section = sectionRepository
+                        .findById(request.getSectionId())
+                        .orElseThrow(() -> new RuntimeException("Section not found"));
+        lesson.setSection(section);
+        lesson.setTitle(request.getTitle());
+        lesson.setDisplayOrder(request.getDisplayOrder());
+        lesson.setLessonType(ELessonType.VIDEO);
+        // =========================
+        // VIDEO
+        // =========================
+        MultipartFile videoFile = request.getVideoFile();
+        if (videoFile != null && !videoFile.isEmpty()) {
+            // FFmpeg + HLS + Upload S3
+            ProcessedVideoResult result = videoProcessingService.processVideo(videoFile);
+            AppFile videoAppFile = new AppFile();
+            videoAppFile.setFileName(videoFile.getOriginalFilename());
+            // m3u8 URL
+            videoAppFile.setFileUrl(result.getPlaylistUrl());
+            videoAppFile.setFileType(EFileType.VIDEO);
+            videoAppFile.setPurpose(EFilePurpose.LESSON_VIDEO);
+            // HLS
+            videoAppFile.setExtension("m3u8");
+            appFileRepository.save(videoAppFile);
+            lesson.setVideo(videoAppFile);
+        }
+        // =========================
+        // SUBTITLE
+        // =========================
+        MultipartFile subtitleFile = request.getSubtitleFile();
+        if (subtitleFile != null && !subtitleFile.isEmpty()) {
+            // upload subtitle lên S3
+            String subtitleUrl = s3Service.uploadFileWithoutException(subtitleFile);
+            AppFile subtitleAppFile = new AppFile();
+            subtitleAppFile.setFileName(subtitleFile.getOriginalFilename());
+            subtitleAppFile.setFileUrl(subtitleUrl);
+            subtitleAppFile.setFileType(EFileType.SUBTITLE);
+            subtitleAppFile.setPurpose(EFilePurpose.LESSON_SUBTITLE);
+            // extension
+            String originalName = subtitleFile.getOriginalFilename();
+            if (originalName != null && originalName.contains(".")) {
+                String extension = originalName.substring(originalName.lastIndexOf(".") + 1);
+                subtitleAppFile.setExtension(extension);
+            }
+            appFileRepository.save(subtitleAppFile);
+            lesson.setSubtitle(subtitleAppFile);
+        }
+        // =========================
+        // SAVE LESSON
+        // =========================
+        lessonRepository.save(lesson);
+        return lesson.getLessonId();
+    }
+
+    @Override
+    public void deleteLesson(Long lessonId) {
+        Lesson lesson = lessonRepository
+                .findById(lessonId).orElseThrow(() -> new RuntimeException("Không tìm thấy bài học"));
+        // nếu là quiz thì xoá question + answer
+        if (lesson.getLessonType() == ELessonType.QUIZ) {
+            List<QuizQuestion> questions = quizQuestionRepository.findByLessonLessonIdOrderByDisplayOrder(lessonId);
+            for (QuizQuestion question : questions) {
+                quizAnswerRepository.deleteByQuestion_QuestionId(question.getQuestionId());
+            }
+            quizQuestionRepository.deleteByLesson_LessonId(lessonId);
+        }
+        lessonRepository.delete(lesson);
+    }
+
+    private LessonResponse mapLessonResponse(Lesson lesson) {
+        LessonResponse response = new LessonResponse();
+        response.setId(lesson.getLessonId());
+        response.setTitle(lesson.getTitle());
+        response.setDisplayOrder(lesson.getDisplayOrder());
+        response.setType(lesson.getLessonType().name());
+        // ARTICLE
+        response.setArticleContent(lesson.getArticleContent());
+        // VIDEO
+        if (lesson.getVideo() != null) {
+            response.setVideoUrl(lesson.getVideo().getFileUrl());
+        }
+        // SUBTITLE
+        if (lesson.getSubtitle() != null) {
+            response.setSubtitleUrl(lesson.getSubtitle().getFileUrl());
+        }
+        // QUIZ
+        if (lesson.getLessonType() == ELessonType.QUIZ) {
+            List<QuizQuestion> questions = quizQuestionRepository
+                            .findByLessonLessonIdOrderByDisplayOrder(lesson.getLessonId());
+            List<QuestionResponse> questionResponses =
+                    questions.stream()
+                            .map(question -> {
+                                QuestionResponse questionResponse = new QuestionResponse();
+                                questionResponse.setId(question.getQuestionId());
+                                questionResponse.setQuestionText(question.getQuestionText());
+                                questionResponse.setDisplayOrder(question.getDisplayOrder());
+                                // ANSWERS
+                                List<QuizAnswer> answers =
+                                        quizAnswerRepository
+                                                .findByQuestionQuestionIdOrderByDisplayOrder(question.getQuestionId());
+                                List<AnswerResponse> answerResponses = answers.stream()
+                                                .map(answer -> {
+                                                    AnswerResponse answerResponse = new AnswerResponse();
+                                                    answerResponse.setId(answer.getAnswerId());
+                                                    answerResponse.setText(answer.getAnswerText());
+                                                    answerResponse.setIsCorrect(answer.getIsCorrect());
+                                                    answerResponse.setDisplayOrder(answer.getDisplayOrder());
+                                                    return answerResponse;
+                                                })
+                                                .toList();
+                                questionResponse.setAnswers(answerResponses);
+                                return questionResponse;
+                            })
+                            .toList();
+            response.setQuestions(questionResponses);
+        }
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public void deleteCourse(Long courseId) {
+        Course course = courseRepository
+                .findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+        courseRepository.delete(course);
+    }
+
+    @Override
+    public void publishCourse(Long courseId) {
+        Course course = courseRepository
+                        .findById(courseId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Course not found"
+                                )
+                        );
+        CourseVersion version = course.getCurrentDraftVersion();
+        if (version == null) {
+            throw new RuntimeException("Không có phiên bản draft để publish");
+        }
+        // update status
+        version.setStatus(ECourseStatus.APPROVED);
+        // set current published version
+        course.setCurrentPublishedVersion(version);
+        // optional:
+        // remove draft reference
+        course.setCurrentDraftVersion(null);
+        courseVersionRepository.save(version);
+        courseRepository.save(course);
+    }
+
+    @Override
+    public CourseDetailResponse getCourseDetailResponse(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+
+        // Ưu tiên lấy phiên bản đã publish
+        CourseVersion version = course.getCurrentPublishedVersion();
+        if (version == null) {
+            // Nếu chưa có version publish, có thể coi bản nháp (nếu có)
+            version = course.getCurrentDraftVersion();
+        }
+        if (version == null && !course.getVersions().isEmpty()) {
+            version = course.getVersions().get(0);
+        }
+        if (version == null) {
+            throw new RuntimeException("Không tìm thấy phiên bản khoá học nào");
+        }
+
+        String thumbnailUrl = null;
+        if (version.getThumbnail() != null) {
+            thumbnailUrl = version.getThumbnail().getFileUrl();
+        }
+
+        String instructorName = course.getInstructor().getFullName();
+        String instructorEmail = course.getInstructor().getEmail();
+        String instructorAvatarUrl = null;
+        if (course.getInstructor().getAvatar() != null) {
+            instructorAvatarUrl = course.getInstructor().getAvatar().getFileUrl();
+        }
+
+        List<SectionResponse> sections = getSectionsByCourseVersionId(version.getCourseVersionId());
+
+        return CourseDetailResponse.builder()
+                .courseId(course.getCourseId())
+                .title(version.getTitle())
+                .subtitle(version.getSubtitle())
+                .description(version.getDescription())
+                .price(version.getPrice())
+                .thumbnailUrl(thumbnailUrl)
+                .averageRating(course.getAverageRating())
+                .totalReviews(course.getTotalReviews())
+                .totalStudents(course.getTotalStudents())
+                .instructorName(instructorName)
+                .instructorEmail(instructorEmail)
+                .instructorAvatarUrl(instructorAvatarUrl)
+                .sections(sections)
+                .build();
+    }
+
+    @Override
+    public List<CommentResponse> getCommentsByLessonId(Long lessonId) {
+        List<LessonComment> comments = lessonCommentRepository.findByLesson_LessonIdOrderByCreatedAtDesc(lessonId);
+        return comments.stream().map(c -> {
+            String avatarUrl = null;
+            if (c.getUser().getAvatar() != null) {
+                avatarUrl = c.getUser().getAvatar().getFileUrl();
+            }
+            return CommentResponse.builder()
+                    .commentId(c.getCommentId())
+                    .userName(c.getUser().getFullName())
+                    .userEmail(c.getUser().getEmail())
+                    .avatarUrl(avatarUrl)
+                    .content(c.getContent())
+                    .createdAt(c.getCreatedAt())
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public CommentResponse addComment(Long lessonId, String content, User user) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new RuntimeException("Lesson not found"));
+
+        LessonComment comment = new LessonComment();
+        comment.setLesson(lesson);
+        comment.setUser(user);
+        comment.setContent(content);
+
+        LessonComment saved = lessonCommentRepository.save(comment);
+
+        String avatarUrl = null;
+        if (user.getAvatar() != null) {
+            avatarUrl = user.getAvatar().getFileUrl();
+        }
+
+        return CommentResponse.builder()
+                .commentId(saved.getCommentId())
+                .userName(user.getFullName())
+                .userEmail(user.getEmail())
+                .avatarUrl(avatarUrl)
+                .content(saved.getContent())
+                .createdAt(saved.getCreatedAt())
+                .build();
+    }
+
+    @Override
+    public List<FeedbackResponse> getFeedbackByCourseId(Long courseId) {
+        List<CourseFeedback> feedbacks = courseFeedbackRepository.findByCourse_CourseIdOrderByCreatedAtDesc(courseId);
+        return feedbacks.stream().map(f -> {
+            String avatarUrl = null;
+            if (f.getStudent().getAvatar() != null) {
+                avatarUrl = f.getStudent().getAvatar().getFileUrl();
+            }
+            return FeedbackResponse.builder()
+                    .feedbackId(f.getFeedbackId())
+                    .studentName(f.getStudent().getFullName())
+                    .studentEmail(f.getStudent().getEmail())
+                    .studentAvatarUrl(avatarUrl)
+                    .rating(f.getRating())
+                    .comment(f.getComment())
+                    .createdAt(f.getCreatedAt())
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public FeedbackResponse addFeedback(Long courseId, Integer rating, String comment, User user) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+
+        CourseFeedback feedback = courseFeedbackRepository
+                .findByCourse_CourseIdAndStudent_UserId(courseId, user.getUserId())
+                .orElse(new CourseFeedback());
+
+        feedback.setCourse(course);
+        feedback.setStudent(user);
+        feedback.setRating(rating);
+        feedback.setComment(comment);
+
+        CourseFeedback saved = courseFeedbackRepository.save(feedback);
+
+        List<CourseFeedback> allFeedbacks = courseFeedbackRepository.findByCourse_CourseIdOrderByCreatedAtDesc(courseId);
+        int totalReviews = allFeedbacks.size();
+        double sum = allFeedbacks.stream().mapToInt(CourseFeedback::getRating).sum();
+        double avg = totalReviews > 0 ? sum / totalReviews : 0.0;
+
+        course.setTotalReviews(totalReviews);
+        course.setAverageRating(BigDecimal.valueOf(avg));
+        courseRepository.save(course);
+
+        String avatarUrl = null;
+        if (user.getAvatar() != null) {
+            avatarUrl = user.getAvatar().getFileUrl();
+        }
+
+        return FeedbackResponse.builder()
+                .feedbackId(saved.getFeedbackId())
+                .studentName(user.getFullName())
+                .studentEmail(user.getEmail())
+                .studentAvatarUrl(avatarUrl)
+                .rating(saved.getRating())
+                .comment(saved.getComment())
+                .createdAt(saved.getCreatedAt())
+                .build();
+    }
 
 
     @Override
-    @Transactional(readOnly = true)
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public CourseDetailDTO getCourseDetail(Long courseId) {
 
         // 1. Lấy khoá học từ DB
