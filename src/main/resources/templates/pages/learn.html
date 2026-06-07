@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/main-layout}">
+
+<head>
+    <style>
+        /* ===== LAYOUT ===== */
+        .learn-layout {
+            display: flex;
+            min-height: calc(100vh - 64px);
+            background: #0f0f0f;
+        }
+
+        /* ===== VIDEO PANEL (trái) ===== */
+        .video-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0f0f0f;
+            overflow-y: auto;
+        }
+
+        /* Vùng video */
+        .video-wrapper {
+            width: 100%;
+            background: #000;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .video-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            gap: 20px;
+        }
+        .play-btn-big {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            border: 3px solid rgba(255,255,255,0.5);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(8px);
+        }
+        .play-btn-big:hover {
+            background: rgba(255,255,255,0.25);
+            transform: scale(1.1);
+        }
+        .video-coming-soon {
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.7);
+        }
+        .video-lesson-title {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.5);
+        }
+
+        /* Thanh điều khiển video giả */
+        .video-controls {
+            background: #1a1a1a;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-top: 1px solid #333;
+        }
+        .ctrl-btn {
+            color: white; background: none; border: none;
+            font-size: 1.1rem; cursor: pointer;
+            opacity: 0.75; transition: opacity 0.2s;
+        }
+        .ctrl-btn:hover { opacity: 1; }
+        .progress-bar-wrap {
+            flex: 1;
+            background: #333;
+            height: 4px;
+            border-radius: 2px;
+            cursor: pointer;
+            position: relative;
+        }
+        .progress-bar-fill {
+            width: 35%;
+            height: 100%;
+            background: linear-gradient(90deg, #7c3aed, #a855f7);
+            border-radius: 2px;
+        }
+        .ctrl-time {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.8rem;
+        }
+
+        /* Nội dung dưới video */
+        .video-info {
+            padding: 24px 32px;
+            border-bottom: 1px solid #222;
+        }
+        .lesson-title-main {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 8px;
+        }
+        .course-name-small {
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+
+        /* Tab notes/Q&A */
+        .learn-tabs {
+            display: flex;
+            gap: 0;
+            padding: 0 32px;
+            border-bottom: 1px solid #222;
+        }
+        .learn-tab {
+            padding: 14px 20px;
+            color: #9ca3af;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .learn-tab.active {
+            color: #a78bfa;
+            border-bottom-color: #7c3aed;
+        }
+        .learn-tab:hover { color: white; }
+
+        .learn-tab-content {
+            padding: 28px 32px;
+            color: #9ca3af;
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+
+        /* ===== SIDEBAR (phải) ===== */
+        .sidebar-panel {
+            width: 360px;
+            flex-shrink: 0;
+            background: #1c1c1c;
+            border-left: 1px solid #2a2a2a;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .sidebar-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .sidebar-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+        /* Progress tổng thể */
+        .overall-progress-bar {
+            background: #333;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+        .overall-progress-fill {
+            width: 20%;
+            height: 100%;
+            background: linear-gradient(90deg, #059669, #10b981);
+            border-radius: 3px;
+        }
+        .progress-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        /* Section trong sidebar */
+        .sidebar-section {
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .sidebar-section-header {
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .sidebar-section-header:hover { background: #242424; }
+        .sidebar-section-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #e5e7eb;
+        }
+        .sidebar-section-meta {
+            font-size: 0.72rem;
+            color: #6b7280;
+        }
+
+        /* Lesson item trong sidebar */
+        .sidebar-lesson {
+            padding: 10px 20px 10px 32px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid #242424;
+        }
+        .sidebar-lesson:hover { background: #242424; }
+        .sidebar-lesson.active { background: #1e1040; border-left: 3px solid #7c3aed; }
+        .lesson-check {
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            border: 2px solid #4b5563;
+            flex-shrink: 0; margin-top: 2px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.65rem;
+        }
+        .lesson-check.done {
+            background: #059669;
+            border-color: #059669;
+            color: white;
+        }
+        .lesson-check.current {
+            border-color: #7c3aed;
+        }
+        .lesson-name {
+            font-size: 0.82rem;
+            color: #d1d5db;
+            line-height: 1.4;
+        }
+        .lesson-name.active-text { color: #a78bfa; font-weight: 600; }
+        .lesson-duration-small {
+            font-size: 0.72rem;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        /* Badge đang phát triển */
+        .dev-notice {
+            margin: 20px 32px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-size: 0.85rem;
+            color: #fbbf24;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+    </style>
+</head>
+
+<body>
+<main layout:fragment="content">
+
+    <div class="learn-layout">
+
+        <!-- ===== PANEL TRÁI: VIDEO + INFO ===== -->
+        <div class="video-panel">
+
+            <!-- Video Placeholder -->
+            <div class="video-wrapper">
+                <div class="video-placeholder">
+                    <div class="play-btn-big">
+                        <i class="bi bi-play-fill"></i>
+                    </div>
+                    <div class="video-coming-soon">🎬 Video bài giảng</div>
+                    <div class="video-lesson-title">Bài 1: Giới thiệu khoá học</div>
+                </div>
+            </div>
+
+            <!-- Thanh điều khiển giả -->
+            <div class="video-controls">
+                <button class="ctrl-btn"><i class="bi bi-skip-start-fill"></i></button>
+                <button class="ctrl-btn"><i class="bi bi-play-fill"></i></button>
+                <button class="ctrl-btn"><i class="bi bi-skip-end-fill"></i></button>
+
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar-fill"></div>
+                </div>
+
+                <span class="ctrl-time">03:32 / 10:00</span>
+                <button class="ctrl-btn"><i class="bi bi-volume-up-fill"></i></button>
+                <button class="ctrl-btn"><i class="bi bi-fullscreen"></i></button>
+            </div>
+
+            <!-- Tên bài học -->
+            <div class="video-info">
+                <div class="lesson-title-main">Bài 1: Giới thiệu khoá học</div>
+                <div class="course-name-small"
+                     th:text="${course.title}">Tên khoá học</div>
+            </div>
+
+            <!-- Thông báo đang phát triển -->
+            <div class="dev-notice">
+                <i class="bi bi-tools" style="font-size:1.1rem; flex-shrink:0; margin-top:1px;"></i>
+                <span>
+                    <strong>Chức năng đang phát triển.</strong>
+                    Trang học đầy đủ sẽ được hoàn thiện trong phiên bản tiếp theo.
+                    Video, tiến trình học và ghi chú sẽ hoạt động sau khi tích hợp xong.
+                </span>
+            </div>
+
+            <!-- Tabs -->
+            <div class="learn-tabs">
+                <div class="learn-tab active">📝 Ghi chú</div>
+                <div class="learn-tab">❓ Hỏi & Đáp</div>
+                <div class="learn-tab">📋 Tổng quan</div>
+            </div>
+
+            <div class="learn-tab-content">
+                Ghi chú của bạn sẽ được lưu tại đây. Nhấn vào bài học bất kỳ trong danh sách bên phải để bắt đầu học.
+            </div>
+
+        </div>
+
+        <!-- ===== SIDEBAR PHẢI: DANH SÁCH BÀI HỌC ===== -->
+        <div class="sidebar-panel">
+            <div class="sidebar-header">
+                <div class="sidebar-title"
+                     th:text="${course.title}">Nội dung khoá học</div>
+                <div class="overall-progress-bar">
+                    <div class="overall-progress-fill"></div>
+                </div>
+                <div class="progress-label">1 / 5 bài đã hoàn thành (20%)</div>
+            </div>
+
+            <!-- Danh sách sections + lessons từ DB -->
+            <div th:each="section, si : ${course.sections}"
+                 class="sidebar-section">
+
+                <div class="sidebar-section-header">
+                    <div>
+                        <div class="sidebar-section-name"
+                             th:text="${section.title}">Tên phần</div>
+                        <div class="sidebar-section-meta"
+                             th:text="${#lists.size(section.lessons)} + ' bài học'">4 bài</div>
+                    </div>
+                    <i class="bi bi-chevron-down" style="color:#6b7280; font-size:0.8rem;"></i>
+                </div>
+
+                <!-- Lessons -->
+                <div th:each="lesson, li : ${section.lessons}"
+                     th:class="${si.index == 0 and li.index == 0} ? 'sidebar-lesson active' : 'sidebar-lesson'">
+
+                    <!-- Icon trạng thái -->
+                    <div th:class="${si.index == 0 and li.index == 0} ? 'lesson-check done' :
+                                  (${si.index == 0 and li.index == 1} ? 'lesson-check current' : 'lesson-check')">
+                        <i th:if="${si.index == 0 and li.index == 0}" class="bi bi-check"></i>
+                    </div>
+
+                    <div>
+                        <div th:class="${si.index == 0 and li.index == 0} ? 'lesson-name active-text' : 'lesson-name'"
+                             th:text="${lesson.title}">Tên bài học</div>
+                        <div class="lesson-duration-small"
+                             th:if="${lesson.durationSeconds != null}"
+                             th:text="${lesson.durationSeconds / 60} + ' phút'">10 phút</div>
+                        <div class="lesson-duration-small"
+                             th:unless="${lesson.durationSeconds != null}">
+                            <i class="bi bi-play-circle"></i> Video
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <!-- Fallback nếu chưa có sections -->
+            <div th:if="${#lists.isEmpty(course.sections)}"
+                 style="padding:32px 20px; color:#6b7280; text-align:center; font-size:0.85rem;">
+                <i class="bi bi-clock" style="font-size:2rem; display:block; margin-bottom:10px;"></i>
+                Nội dung bài học đang được cập nhật...
+            </div>
+
+        </div>
+
+    </div>
+
+</main>
+</body>
+</html>

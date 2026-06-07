@@ -23,6 +23,7 @@ INSERT INTO tags (created_at, created_by, delete_flag, updated_at, updated_by, t
 VALUES (GETDATE(), N'system', 0, NULL, NULL, N'ReactJS', N'Xây dựng giao diện frontend hiện đại với ReactJS');
 -- =========================================
 -- USERS
+-- Password hash: -- $2a$12$9nYTgwKTwY931.EcLZ7OyuDon1jamWCxJD7kDuapIMMWPSPKeek8q
 -- =========================================
 INSERT INTO users ( created_at, created_by, delete_flag, updated_at, updated_by, email, password, full_name, phone, role, status, bank_name, bank_code, bank_account_number, bank_account_holder )
 VALUES ( GETDATE(), N'system', 0, NULL, NULL, N'admin@fcourse.vn', N'$2a$12$9nYTgwKTwY931.EcLZ7OyuDon1jamWCxJD7kDuapIMMWPSPKeek8q', N'Nguyễn Thành Đạt', N'0901000001', N'ADMIN', N'ACTIVE', N'Vietcombank', N'VCB', N'1029384756', N'NGUYEN THANH DAT' );
@@ -43,7 +44,7 @@ VALUES ( GETDATE(), N'system', 0, NULL, NULL, N'hocvien04@gmail.com', N'$2a$12$9
 -- =========================================
 INSERT INTO files (created_at, created_by, delete_flag, updated_at, updated_by, file_name, file_url, file_type, purpose)
 VALUES (GETDATE(), N'system', 0, NULL, NULL, N'spring-boot-thumbnail',
-        N'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=480&h=270&fit=crop',
+        N'/image/gioi.png',
         N'IMAGE', N'COURSE_THUMBNAIL');
 
 INSERT INTO files (created_at, created_by, delete_flag, updated_at, updated_by, file_name, file_url, file_type, purpose)
@@ -193,3 +194,144 @@ UPDATE courses SET current_published_version_id =
                        (SELECT TOP 1 course_version_id FROM course_versions WHERE title = N'Microservices Với Spring Cloud')
 WHERE course_id =
       (SELECT TOP 1 course_id FROM course_versions WHERE title = N'Microservices Với Spring Cloud');
+
+-- =========================================
+-- SECTIONS VÀ LESSONS CHO 5 KHOÁ HỌC
+-- =========================================
+
+-- ===== SPRING BOOT COURSE =====
+INSERT INTO course_sections (course_version_id, title, display_order, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 course_version_id, N'Phần 1: Giới Thiệu Spring Boot', 1, GETDATE(), N'system', 0, NULL, NULL FROM course_versions WHERE title = N'Spring Boot 3 - Từ Cơ Bản Đến Nâng Cao';
+
+INSERT INTO course_sections (course_version_id, title, display_order, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 course_version_id, N'Phần 2: Spring Data JPA & Hibernate', 2, GETDATE(), N'system', 0, NULL, NULL FROM course_versions WHERE title = N'Spring Boot 3 - Từ Cơ Bản Đến Nâng Cao';
+
+INSERT INTO course_sections (course_version_id, title, display_order, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 course_version_id, N'Phần 3: Spring Security & JWT', 3, GETDATE(), N'system', 0, NULL, NULL FROM course_versions WHERE title = N'Spring Boot 3 - Từ Cơ Bản Đến Nâng Cao';
+
+-- Lessons của Section 1
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Spring Boot là gì?', N'VIDEO', 1, 600, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 1: Giới Thiệu Spring Boot';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Cài đặt môi trường', N'VIDEO', 2, 900, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 1: Giới Thiệu Spring Boot';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Tạo project đầu tiên', N'VIDEO', 3, 1200, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 1: Giới Thiệu Spring Boot';
+
+-- Lessons của Section 2
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'JPA và Hibernate cơ bản', N'VIDEO', 1, 1500, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 2: Spring Data JPA & Hibernate';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Tạo Entity và Repository', N'VIDEO', 2, 1080, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 2: Spring Data JPA & Hibernate';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Quan hệ OneToMany, ManyToOne', N'VIDEO', 3, 1320, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 2: Spring Data JPA & Hibernate';
+
+-- Lessons của Section 3
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Spring Security cơ bản', N'VIDEO', 1, 900, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 3: Spring Security & JWT';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Cấu hình JWT Token', N'VIDEO', 2, 1800, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 3: Spring Security & JWT';
+
+-- ===== REACTJS COURSE =====
+INSERT INTO course_sections (course_version_id, title, display_order, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 course_version_id, N'Phần 1: React Cơ Bản', 1, GETDATE(), N'system', 0, NULL, NULL FROM course_versions WHERE title = N'ReactJS - Xây Dựng Web App Hiện Đại';
+
+INSERT INTO course_sections (course_version_id, title, display_order, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 course_version_id, N'Phần 2: React Hooks & State', 2, GETDATE(), N'system', 0, NULL, NULL FROM course_versions WHERE title = N'ReactJS - Xây Dựng Web App Hiện Đại';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'React là gì và tại sao dùng React?', N'VIDEO', 1, 720, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 1: React Cơ Bản';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'JSX và Component', N'VIDEO', 2, 960, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 1: React Cơ Bản';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Props và State', N'VIDEO', 3, 1140, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 1: React Cơ Bản';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'useState Hook', N'VIDEO', 1, 900, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 2: React Hooks & State';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'useEffect Hook', N'VIDEO', 2, 1080, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 2: React Hooks & State';
+
+-- ===== JAVA FULLSTACK COURSE =====
+INSERT INTO course_sections (course_version_id, title, display_order, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 course_version_id, N'Phần 1: Thiết kế Database', 1, GETDATE(), N'system', 0, NULL, NULL FROM course_versions WHERE title = N'Java Fullstack - Spring Boot + React';
+
+INSERT INTO course_sections (course_version_id, title, display_order, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 course_version_id, N'Phần 2: Xây dựng REST API', 2, GETDATE(), N'system', 0, NULL, NULL FROM course_versions WHERE title = N'Java Fullstack - Spring Boot + React';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Thiết kế ERD Database', N'VIDEO', 1, 1500, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 1: Thiết kế Database';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Tạo bảng với SQL Server', N'VIDEO', 2, 1200, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 1: Thiết kế Database';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Tạo REST API với Spring Boot', N'VIDEO', 1, 1800, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 2: Xây dựng REST API';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Kết nối React với API', N'VIDEO', 2, 1600, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 2: Xây dựng REST API';
+
+-- ===== DOCKER COURSE =====
+INSERT INTO course_sections (course_version_id, title, display_order, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 course_version_id, N'Phần 1: Docker Cơ Bản', 1, GETDATE(), N'system', 0, NULL, NULL FROM course_versions WHERE title = N'Docker & Kubernetes Cho Developer';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Docker là gì?', N'VIDEO', 1, 600, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 1: Docker Cơ Bản';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Tạo Dockerfile đầu tiên', N'VIDEO', 2, 1200, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 1: Docker Cơ Bản';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Docker Compose', N'VIDEO', 3, 1500, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 1: Docker Cơ Bản';
+
+-- ===== MICROSERVICES COURSE =====
+INSERT INTO course_sections (course_version_id, title, display_order, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 course_version_id, N'Phần 1: Kiến Trúc Microservices', 1, GETDATE(), N'system', 0, NULL, NULL FROM course_versions WHERE title = N'Microservices Với Spring Cloud';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'Microservices là gì?', N'VIDEO', 1, 900, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 1: Kiến Trúc Microservices';
+
+INSERT INTO lessons (section_id, title, lesson_type, display_order, duration_seconds, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT TOP 1 section_id, N'API Gateway Pattern', N'VIDEO', 2, 1200, GETDATE(), N'system', 0, NULL, NULL FROM course_sections WHERE title = N'Phần 1: Kiến Trúc Microservices';
+
+-- =========================================
+-- ENROLLMENTS (hocvien01 đã đăng ký 2 khoá)
+-- =========================================
+INSERT INTO enrollments (student_id, course_id, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT
+    (SELECT TOP 1 user_id FROM users WHERE email = N'hocvien01@gmail.com'),
+    (SELECT TOP 1 cv.course_id FROM course_versions cv WHERE cv.title = N'Spring Boot 3 - Từ Cơ Bản Đến Nâng Cao'),
+    GETDATE(), N'system', 0, NULL, NULL;
+
+INSERT INTO enrollments (student_id, course_id, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT
+    (SELECT TOP 1 user_id FROM users WHERE email = N'hocvien01@gmail.com'),
+    (SELECT TOP 1 cv.course_id FROM course_versions cv WHERE cv.title = N'ReactJS - Xây Dựng Web App Hiện Đại'),
+    GETDATE(), N'system', 0, NULL, NULL;
+
+-- =========================================
+-- FEEDBACKS (3 đánh giá mẫu)
+-- =========================================
+INSERT INTO course_feedbacks (course_id, student_id, rating, comment, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT
+    (SELECT TOP 1 cv.course_id FROM course_versions cv WHERE cv.title = N'Spring Boot 3 - Từ Cơ Bản Đến Nâng Cao'),
+    (SELECT TOP 1 user_id FROM users WHERE email = N'hocvien02@gmail.com'),
+    5, N'Khoá học rất hay, giảng viên giải thích dễ hiểu!', GETDATE(), N'system', 0, NULL, NULL;
+
+INSERT INTO course_feedbacks (course_id, student_id, rating, comment, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT
+    (SELECT TOP 1 cv.course_id FROM course_versions cv WHERE cv.title = N'Spring Boot 3 - Từ Cơ Bản Đến Nâng Cao'),
+    (SELECT TOP 1 user_id FROM users WHERE email = N'hocvien03@gmail.com'),
+    4, N'Nội dung chất lượng, phù hợp cho người mới học Spring Boot.', GETDATE(), N'system', 0, NULL, NULL;
+
+INSERT INTO course_feedbacks (course_id, student_id, rating, comment, created_at, created_by, delete_flag, updated_at, updated_by)
+SELECT
+    (SELECT TOP 1 cv.course_id FROM course_versions cv WHERE cv.title = N'ReactJS - Xây Dựng Web App Hiện Đại'),
+    (SELECT TOP 1 user_id FROM users WHERE email = N'hocvien02@gmail.com'),
+    5, N'ReactJS được dạy rất bài bản từ cơ bản đến nâng cao!', GETDATE(), N'system', 0, NULL, NULL;

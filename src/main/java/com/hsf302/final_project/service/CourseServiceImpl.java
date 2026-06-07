@@ -8,6 +8,11 @@ import com.hsf302.final_project.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.hsf302.final_project.dto.response.*;
+import com.hsf302.final_project.entity.*;
+import com.hsf302.final_project.repository.*;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.ArrayList;
 
 import java.util.List;
 
@@ -56,6 +61,92 @@ public class CourseServiceImpl implements CourseService {
                 .averageRating(course.getAverageRating())
                 .totalReviews(course.getTotalReviews())
                 .thumbnailUrl(anhThumbnail)
+                .build();
+    }
+
+    // ===== THÊM CÁC FIELD MỚI VÀO ĐẦU CLASS =====
+    private final CourseSectionRepository courseSectionRepository;
+    private final LessonRepository lessonRepository;
+    private final CourseFeedbackRepository courseFeedbackRepository;
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public CourseDetailDTO getCourseDetail(Long courseId) {
+
+        // 1. Lấy khoá học từ DB
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy khoá học!"));
+
+        CourseVersion version = course.getCurrentPublishedVersion();
+
+        // 2. Lấy URL ảnh thumbnail
+        String thumbnailUrl = null;
+        if (version.getThumbnail() != null) {
+            thumbnailUrl = version.getThumbnail().getFileUrl();
+        }
+
+        // 3. Lấy danh sách phần học (sections) theo thứ tự
+        List<CourseSection> danhSachPhan = courseSectionRepository
+                .findByCourseVersionCourseVersionIdOrderByDisplayOrderAsc(
+                        version.getCourseVersionId()
+                );
+
+        // 4. Với từng phần, lấy danh sách bài học (lessons)
+        List<SectionDTO> sectionDTOs = new ArrayList<>();
+        for (CourseSection phan : danhSachPhan) {
+
+            List<Lesson> danhSachBaiHoc = lessonRepository
+                    .findBySectionSectionIdOrderByDisplayOrderAsc(phan.getSectionId());
+
+            List<LessonDTO> lessonDTOs = danhSachBaiHoc.stream()
+                    .map(baiHoc -> LessonDTO.builder()
+                            .lessonId(baiHoc.getLessonId())
+                            .title(baiHoc.getTitle())
+                            .lessonType(baiHoc.getLessonType() != null
+                                    ? baiHoc.getLessonType().name() : "VIDEO")
+                            .durationSeconds(baiHoc.getDurationSeconds())
+                            .displayOrder(baiHoc.getDisplayOrder())
+                            .build())
+                    .toList();
+
+            sectionDTOs.add(SectionDTO.builder()
+                    .sectionId(phan.getSectionId())
+                    .title(phan.getTitle())
+                    .displayOrder(phan.getDisplayOrder())
+                    .lessons(lessonDTOs)
+                    .build());
+        }
+
+        // 5. Lấy 4 đánh giá mới nhất
+        List<CourseFeedback> danhSachDanhGia = courseFeedbackRepository
+                .findByCourse_CourseIdOrderByCreatedAtDesc(courseId);
+
+        List<FeedbackDTO> feedbackDTOs = danhSachDanhGia.stream()
+                .limit(4)
+                .map(danhGia -> FeedbackDTO.builder()
+                        .studentName(danhGia.getStudent().getFullName())
+                        .rating(danhGia.getRating())
+                        .comment(danhGia.getComment())
+                        .createdAt(danhGia.getCreatedAt())
+                        .build())
+                .toList();
+
+        // 6. Trả về CourseDetailDTO
+        return CourseDetailDTO.builder()
+                .courseId(course.getCourseId())
+                .title(version.getTitle())
+                .subtitle(version.getSubtitle())
+                .description(version.getDescription())
+                .price(version.getPrice())
+                .thumbnailUrl(thumbnailUrl)
+                .averageRating(course.getAverageRating())
+                .totalReviews(course.getTotalReviews())
+                .totalStudents(course.getTotalStudents())
+                .instructorName(course.getInstructor().getFullName())
+                .courseVersionId(version.getCourseVersionId())
+                .sections(sectionDTOs)
+                .feedbacks(feedbackDTOs)
                 .build();
     }
 }

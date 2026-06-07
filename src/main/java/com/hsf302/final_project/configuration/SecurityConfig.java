@@ -25,6 +25,7 @@ public class SecurityConfig {
                                 "/login",
                                 "/forgot-password",
                                 "/register",
+                                "/course/**",
                                 "/test-s3/**",  // <--- thêm doòng này để test chức năng s3
                                 "/css/**",
                                 "/js/**",
